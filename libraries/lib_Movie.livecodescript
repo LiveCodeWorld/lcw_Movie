@@ -63,14 +63,6 @@ getprop movie_StackName
    return "View|Movie|Player"
 end movie_StackName
 
-getprop movie_View
-   return the long id of group 1 of me
-end movie_View
-
-getprop movie_Player
-   return the movie_Player of the movie_View of me
-end movie_Player
-
 getprop movieController_View
    put view_GetTemplateObject ("View|Movie|Controller|QuickTime") into movieController
    if exists(movieController) then

@@ -11,6 +11,14 @@ version: 0.2
 -
 local LocalArray
 
+getprop menu_Target [tObject]
+   put the movie_Player of tObject into mPlayer
+   if exists (mPlayer) is false then
+      put the long id of player 1 of stack "lcw_Movie" into mPlayer
+   end if
+   return mPlayer
+end menu_Target
+
 on mDouble_Up indexView, someLine
    put the long id of grp 1 of stack "View|Movie" into mPlayer
    --
@@ -44,114 +52,54 @@ on mDouble_Up indexView, someLine
    end switch
 end mDouble_Up 
 
-command edl_ExportClip someVideoFile, sSeconds, eSeconds, pExportFilePath
-   if pExportFilePath = "ask" then
-      set the itemdelimiter to slash
-      put someVideoFile into pExportFilePath
-      put item -1 of pExportFilePath into shortExportFile
-      put lcw_Ask ("What would you like to call the exported clip?", shortExportFile) into shortExportFile
-      put shortExportFile into item -1 of pExportFilePath
-   end if
-   
-   ffmpeg_SplitVideo someVideoFile, sSeconds, eSeconds, pExportFilePath, cutFast
-   put the result into exportedVideoPath
-   
-   display_Video exportedVideoPath
-   -- set the filename of playerObject to exportedVideoPath
-   return exportedVideoPath
-end edl_ExportClip
+getprop hiliteSelection_Param [mView]
+   put the movie_ShowSelection of mView into someBoolean
+   return someBoolean
+end hiliteSelection_Param
 
-private command _SelectedClipHMSF indexView, @sourceInPoint, @sourceOutPoint
-   put the selected_Line of indexView into someLine
-   edl_DeconstructLine someLine, editNum, realName, trackType, transitionType, sourceInPoint, sourceOutPoint, recorderInPoint, recorderOutPoint   
-end _SelectedClipHMSF
+getprop hiliteSelection_Params [mView]
+   return "true,false"
+end hiliteSelection_Params
 
-private command _SelectedClipSeconds indexView, @inSeconds, @outSeconds
-   _SelectedClipHMSF indexView, sourceInPoint, sourceOutPoint
-   put edl_ConvertToMovieSeconds (sourceInPoint) into inSeconds
-   
-   -- take one frame off out point
-   put edl_ConvertToMovieSeconds (sourceOutPoint, -1) into outSeconds
-end _SelectedClipSeconds
+getprop showController_Param [mView]
+   put the movie_ControllerShowing of mView into someBoolean
+   return someBoolean
+end showController_Param
 
-private function edl_ConvertToMovieSeconds hmsfTimeWithHourStart, pAddFrames, pFPS
-   if pFPS is empty then put 30 into pFPS
-   set the itemdelimiter to ":"
-   put "00" into item 1 of hmsfTimeWithHourStart
+getprop showController_Params [mView]
+   return "true,false"
+end showController_Params
+
+getprop cut_Fasts
+   return "true,false"
+end cut_Fasts
+
+command movie_Play mPlayer
+   -- set the movie_Paused of mPlayer to false
    --
-   put item -1 of hmsfTimeWithHourStart + pAddFrames into newFrames
-   put newFrames into item -1 of hmsfTimeWithHourStart
+   put the stack_Name of mPlayer into stackName
+   put the short id of mPlayer into sID
    --
-   put time_HmsfToSeconds (hmsfTimeWithHourStart, pFPS) into movieSeconds
-   return movieSeconds
-end edl_ConvertToMovieSeconds
-
-function edl_ParseLines someEDL
-   put line 1 of someEDL into titleLine
-   put line 2 of someEDL into dropLine
-   delete line 1 to 2 of someEDL
-   repeat for each line someLine in someEDL
-      if someLine is empty then next repeat
-      
-      edl_DeconstructLine someLine, editNum, realName, trackType, transitionType, sourceInPoint, sourceOutPoint, recorderInPoint, recorderOutPoint
-   end repeat
-   return edlArray
-end edl_ParseLines
-
-command edl_DeconstructLine someLine, @editNum, @realName, @trackType, @transitionType, @sourceInPoint, @sourceOutPoint, @recorderInPoint, @recorderOutPoint
-   put word 1 of someLine into editNum
-   put word 2 of someLine into realName
-   put word 3 of someLine into trackType
-   put word 4 of someLine into transitionType
-   put word 5 of someLine into sourceInPoint
-   put word 6 of someLine into sourceOutPoint
-   put word 7 of someLine into recorderInPoint
-   put word 8 of someLine into recorderOutPoint
-end edl_DeconstructLine
-
-
---> Global | EDL | Line | Menu
--
-on menu_Seek indexView, seekWhere
-   put the long id of grp 1 of stack "View|Movie" into mPlayer
-   _SelectedClipHMSF indexView, sourceInPoint, sourceOutPoint
-   switch seekWhere
-      case "Start"
-         put edl_ConvertToMovieSeconds (sourceInPoint) into mSeconds
-         break
-      case "End"
-         put edl_ConvertToMovieSeconds (sourceOutPoint) into mSeconds
-         break
-      case "-"
-      case "Frame before start"
-         put edl_ConvertToMovieSeconds (sourceInPoint, -1) into mSeconds
-         break
-      case "Frame before end"
-         put edl_ConvertToMovieSeconds (sourceOutPoint, -1) into mSeconds
-         break
-   end switch
-   set the movie_Seconds of mPlayer to mSeconds         
-end menu_Seek
-
-on menu_ExportClip indexView, cutFast
-   put the long id of grp 1 of stack "View|Movie" into mPlayer
-   --   
-   _SelectedClipSeconds indexView, inSeconds, outSeconds
-   put the movie_File of mPlayer into someVideoFile
-   edl_ExportClip someVideoFile, inSeconds, outSeconds, "ask"
-   put the result into exportedVideoPath
-   -- put exportedVideoPath
-end menu_ExportClip
+   start player id sID of stack stackName
+end movie_Play
 
 
 --> Global | Movie | Menu
 -
 on menu_PlayMovie mPlayer
-   put the movie_Player of mPlayer into pObject
-   put the movie_File of mPlayer into mFile
-   mplayer_Play mFile
-   -- put the result
+   -- movie_Play mPlayer
+   set the movie_Paused of mPlayer to false
 end menu_PlayMovie
+
+on menu_Shotcut mPlayer
+   put the filename of mPlayer into someFile
+   --
+   launch someFile with "/Applications/Shotcut.app"
+   -- launch someFile with "/System/Applications/QuickTime Player.app"
+end menu_Shotcut
+
+on _
+end _
 
 on menu_ExportSelectedClip mPlayer, cutFast
    put the clip_StartTime [s] of mPlayer into sSeconds
@@ -162,14 +110,15 @@ on menu_ExportSelectedClip mPlayer, cutFast
    put exportedVideoPath
 end menu_ExportSelectedClip
 
-on menu_DisplayEditMarkers
-   put LocalArray ["someFile"] into someFile
-   if someFile is empty or the shiftKey is "Down" then
-      answer file "Select an EDL"
-      put it into someFile
-      if someFile is empty then exit to top
-      put someFile into LocalArray ["someFile"]
-   end if
+on menu_DisplayEditMarkers mPlayer
+   -- put the filename of mPlayer into someFile
+   --
+   -- if someFile is empty or the shiftKey is "Down" then
+   answer file "Select an EDL"
+   put it into someFile
+   if someFile is empty then exit to top
+   put someFile into LocalArray ["someFile"]
+   -- end if
    
    put url ("file:" & someFile) into someEDL
    replace (CR & CR) with CR in someEDL
@@ -184,16 +133,16 @@ on menu_DisplayEditMarkers
    put the result into indexView
    set the line_Menu of indexView to "Global | EDL | Line | Menu"
 end menu_DisplayEditMarkers
-   
+
 on _
 end _
 
-on menu_ShowController mView, someBoolean
-   set the movie_ControllerShowing of mView to someBoolean
+on menu_ShowController mPlayer, someBoolean
+   set the movie_ControllerShowing of mPlayer to someBoolean 
 end menu_ShowController
 
-on menu_HiliteSelection mView, someBoolean
-   set the movie_ShowSelection of mView to someBoolean
+on menu_HiliteSelection mPlayer, someBoolean
+   set the movie_ShowSelection of mPlayer to someBoolean
 end menu_HiliteSelection
 
 on _
@@ -204,28 +153,76 @@ on submenu_Dev
 end submenu_Dev
 
 
---> Global | Movie | Menu | Props
--
-getprop hilite_Selection [mView]
-   put the movie_ShowSelection of mView into someBoolean
-   return someBoolean
-end hilite_Selection
-
-getprop show_Controller [mView]
-   put the movie_ControllerShowing of mView into someBoolean
-   return someBoolean
-end show_Controller
-
-getprop cut_Fasts
-   return "true,false"
-end cut_Fasts
-
---> Global | Movie | Menu | Disabled
--
-
 --> Dev | Menu
 -
-on menu_DisplayMovie mTarget
+on menu_EditBehavior mPlayer
+   put the behavior of mPlayer into bObject
+   edit the script of bObject
+end menu_EditBehavior
+
+on _
+end _
+
+on menu_SetCallBacks mPlayer
+   put "90000,soundNotes" & CR after messageList
+   put "27000,soundNotes" & CR after messageList
+   put "36000,soundNotes" & CR after messageList
+   put "180000,soundNotes" & CR after messageList
+   put "4000000,soundNotes" & CR after messageList
+   delete char -1 of messageList
+   
+   set the callbacks of mPlayer to messageList
+   put the callbacks of mPlayer
+   --
+   set the currenttime of mPlayer to 0
+   -- movie_Play mPlayer
+   set the movie_Paused of mPlayer to false
+end menu_SetCallBacks
+
+on _
+end _
+
+on menu_TestMeltXml
+   answer file "Select a melt file..."
+   put it into someFile
+   put url ("file:" & someFile) into someXML
+   --
+   put xml_ToArray (someXML, false, empty, true, true) into someArray
+   --
+   display_View someArray
+   --
+   put xml_FromArray (someArray)
+end menu_TestMeltXml
+
+on menu_TestConstructMelt mPlayer
+   put the melt_Array of mPlayer into mltArray
+   --
+   display_View mltArray, "melt_ConstructArray", "MLT"
+   put the result into dView
+   --
+   set the title_Menu of dView to "Global | Melt | Tree | Menu"
+   set the line_Menu of dView to "Global | Melt | Tree | Line | Menu"
+end menu_TestConstructMelt
+
+on _
+end _
+
+on menu_DownloadYoutube mPlayer
+   put lcw_Ask ("Enter a Youtube url...", "https://www.youtube.com/watch?v=AGNNBoCjIP8") into youtubeUrl
+   youtube_DownloadVideo youtubeUrl
+   put the result into videoFile
+   --
+   set the filename of mPlayer to videoFile
+end menu_DownloadYoutube
+
+on menu_MplayMovie mPlayer
+   put the movie_Player of mPlayer into pObject
+   put the movie_File of mPlayer into mFile
+   mplayer_Play mFile
+   -- put the result
+end menu_MplayMovie
+
+on menu_DisplayMovie mPlayer
    answer file "Select a movie file..." -- with type "MPEG-4 movie"
    put it into someFile
    
@@ -249,7 +246,7 @@ end menu_DisplayMovie
 --> END
 
 on insert_MoviePlayerMenu
-    return "Global | Movie | Video | Menu"
+   return "Global | Movie | Video | Menu"
 end insert_MoviePlayerMenu
 
 on _
@@ -268,17 +265,17 @@ on submenu_BookMarkMenu
 end submenu_BookMarkMenu
 
 on submenu_MovieCallMenu
-    menu_DoSub "Global | Movie | Call | Menu"
+   menu_DoSub "Global | Movie | Call | Menu"
 end submenu_MovieCallMenu
-    
+
 on submenu_QuickTime
-    return "Global | QuickTime | Menu"
+   return "Global | QuickTime | Menu"
 end submenu_QuickTime
 
 on submenu_MovieTools
-    return "Movie | Tools | Menu"
+   return "Movie | Tools | Menu"
 end submenu_MovieTools
 
 on submenu_MovieWindowMenu
-    return "Global | Movie | Window | Menu"
+   return "Global | Movie | Window | Menu"
 end submenu_MovieWindowMenu

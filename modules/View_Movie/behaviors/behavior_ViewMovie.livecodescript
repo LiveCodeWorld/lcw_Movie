@@ -20,39 +20,329 @@ This view displays a video.
 
 local LocalArray
 
-on currentTimeChanged newTime
-   put the event_Message [newTime]  of me into messageName
-   if messageName is empty then pass currentTimeChanged
+
+--> Working on
+-
+command m3u_Play m3uText
+   if line 1 of m3uText is not "#EXTM3U" then return empty
+   delete line 1 of m3uText
+   put the number of lines of m3uText into maxNum
+   if maxNum mod 2 > 1 then return empty
+   put maxNum / 2 into pairNum
+   --
+   set the itemdelimiter to ":"
+   repeat pairNum
+      _DeconstructEXTINF extinfLine, shortFile
+      put the result into trackDuration
+      if trackDuration = 0 then
+         breakpoint
+         return empty
+      end if
+      
+      get line 2 of m3uText
+      switch item 1 of it
+         case "file"
+            put it into someURl
+            break
+         case "url"
+            
+            break
+         default
+            -- Meta-physical%20Wobbles.mp3
+            put it into urlEncodedShortFile
+      end switch
+      
+      delete line 1 to 2 of m3uText
+   end repeat
+end m3u_Play
+
+private command _DeconstructEXTINF extinfLine, @shortFile
+   -- #EXTINF:155,Lovelock robot talk.mp4
+   set the itemdelimiter to ":"
+   if item 1 of extinfLine is not "#EXTINF" then
+      breakpoint
+      return 0
+   end if
    
-   set the movie_Paused of me to true
-   put messageName
-   do messageName
+   get item 2 of extinfLine
+   set the itemdelimiter to comma
+   put item 1 of it into trackDuration -- track information: runtime in seconds and display title of the following resourc
+   put item 2 of it into shortFile
+   return trackDuration
+end _DeconstructEXTINF
+
+-- getprop menu_Button
+return the long id of button "_Menu Button" of me
+end menu_Button
+
+getprop m3u_Text
+   put LocalArray ["m3u_Text"] into m3uText
+   return m3uText
+end m3u_Text
+
+setprop m3u_Text m3uText
+   put m3uText into LocalArray ["m3u_Text"]
+   m3u_Play m3uText
+end m3u_Text
+
+getprop melt_Array [shotcutCaption]
+   if shotcutCaption is empty then put "First Clip" into shotcutCaption
+   put the movie_Player of the target into mPlayer
+   --
+   put the filename of mPlayer into movieFile
+   --
+   put the clip_StartTime ["hms"] of mPlayer into inClipTime
+   put the clip_EndTime ["hms"] of mPlayer into outClipTime
+   --
+   put melt_ConstructArray (movieFile, inClipTime, outClipTime, shotcutCaption) into mltArray
+   return mltArray
+end melt_Array
+
+
+--> Events | Drag
+-
+command drop_Video droppedURL
+   put _PlayerObject() into mPlayer
+   --
+   set the itemdelimiter to slash
+   switch
+      case droppedURL begins with "https://www.bbc.co.uk/iplayer/episode/"
+         -- case matchtext (droppedURL, "https://www.bbc.co.uk/iplayer/episode/(.+)")
+         iplayer_DownloadVideo droppedURL
+         
+         put iplayer_GetDownloadFolder() into iplayerFolder
+         finder_Reveal iplayerFolder
+         
+         -- Horizon_2020_-_Pluto_Back_From_the_Dead_m000kqm9_original.mp4
+         break
+      case droppedURL begins with "https://www.youtube.com/watch?v="
+      case matchText (droppedURL, "https://www.youtube.com/watch?v=(.+)", tubeID)
+         -- https://www.youtube.com/watch?v=BvDpNtbrr5Y
+         youtube_DownloadVideo droppedURL
+         put the result into videoFile
+         set the filename of mPlayer to videoFile
+         break
+      case matchText (droppedURL, "https://vimeo.com/(.+)", vimeoID)
+      case matchText (droppedURL, "https://vimeo.com/channels/staffpicks/(.+)", vimeoID)
+         put vimeoID
+         break
+      default
+         -- do nothing
+         answer warning "I don't recognise this url!"
+         put droppedURL
+   end switch
+end drop_Video
+
+private command _DroppedFile
+   put line 1 of dragData ["files"] into videoFile
+   switch
+      case file_IsVideo (videoFile)
+         set the movie_File of me to videoFile
+         set the movie_Paused of me to false
+         break
+      case videoFile ends with ".m3u"
+         put url ("file:" & videoFile) into m3uPlayList
+         set the m3u_Text of me to m3uPlayList
+         break
+      default
+         put videoFile & CR & dropKeys & CR&CR & someText
+   end switch
+end _DroppedFile
+
+on dragDrop
+   put the keys of the dragData into dropKeys
+   --
+   switch
+      case "Files" is among the lines of dropKeys
+         _DroppedFile
+         break
+      case "image" is among the lines of dropKeys
+         put the dragData ["image"] into imageContents
+         put "image" & CR & line 1 of imageContents
+         break
+      case "text" is among the lines of dropKeys
+         put the dragData ["text"] into droppedURL
+         drop_Video droppedURL
+         break
+      default
+         put dropKeys
+   end switch
    
    /*
-   put the event_Array [newTime] of me into messageArray
-   if messageArray is an array then
-      set the movie_Paused of me to true
-      
-      put messageArray ["messageName"] into messageName
-      put messageName
-      do messageName
+   put the dragdata ["text"] into droppedText
+   if word 1 of droppedText is "opnDrop" then
+      put the dragsource into targetObject
+      put the view_Object of targetObject into someView
+      if exists(someView) then
+         if the view_IsClass ["View|Movie|Controller"] of someView is true then
+            lcw_Notify "True"
+         else
+            lcw_Notify merge("Source [[the name of targetOject]] is not a movie controller!"), true
+         end if
+      else
+         lcw_Notify merge("Error: source [[the name of targetOject]] is not within a view!"), true
+      end if 
    else
-      -- put newTime
+      -- lcw_Notify (droppedText & CR & CR & the dragsource)
    end if
    */
-end currentTimeChanged
+   pass dragDrop
+end dragDrop
 
--- command movieConvertTime @movieSeconds
-if movieSeconds is a number then return empty
-set the itemdelimiter to ":"
-if the number of items of movieSeconds is 4 then
-   put time_HmsfToSeconds (movieSeconds) into movieSeconds
-   return empty
-else
-   return it
-end if
-end movieConvertTime
+on dragEnter
+   set the allowableDragActions to "link"
+   set the dragAction to "Link"
+   pass dragEnter
+end dragEnter
 
+on keyDown kName
+   switch kName
+      case "i"
+         put the movie_Seconds of me into mSeconds
+         set the clip_StartTime of me to mSeconds
+         break
+      case "o"
+         put the movie_Seconds of me into mSeconds
+         set the clip_EndTime of me to mSeconds
+         break
+      default
+         pass keyDown
+   end switch
+end keyDown
+
+
+--> Movie | Time
+-
+getprop movie_HMS
+   put the movie_Seconds of me into movieSeconds
+   put time_SecondsToHMS (movieSeconds) into hms
+   return hms
+end movie_HMS
+
+getprop movie_HMSF
+   put the movie_Seconds of me into movieSeconds
+   
+   put time_SecondsToHMSF(movieSeconds) into hmsf
+   --
+   return hmsf
+end movie_HMSF
+
+setprop movie_HMSF hmsf
+   set the movie_Seconds of the target to hmsf
+end movie_HMSF
+
+getprop movie_Seconds
+   put the movie_Player of the target into moviePlayer
+   
+   put the timescale of moviePlayer into someScale
+   if someScale = 0 then return empty
+   put the currenttime of moviePlayer / someScale into movieSeconds
+   return movieSeconds
+end movie_Seconds
+
+setprop movie_Seconds movieSeconds
+   put the movie_Player of the target into moviePlayer
+   
+   switch movieSeconds
+      case "end"
+         put the duration of moviePlayer into movieTime
+         set the currenttime of moviePlayer to movieTime
+         break
+      case "start"
+         set the currenttime of moviePlayer to 0
+         break
+      default
+         put the timescale of moviePlayer into someScale
+         put round (movieSeconds * someScale) into movieTime
+         set the currenttime of moviePlayer to movieTime
+   end switch
+   focus on moviePlayer
+end movie_Seconds
+
+getprop movie_Time
+   put the movie_Player of the target into moviePlayer
+   if exists(moviePlayer) is false then return empty
+   
+   put the currenttime of moviePlayer into cTime
+   return cTime
+end movie_Time
+
+setprop movie_Time cTime
+   put the movie_Player of the target into moviePlayer
+   if exists(moviePlayer) is false then return empty
+   
+   if movieTime is "end" then
+      put the duration of moviePlayer into movieEndTime
+      set the currenttime of moviePlayer to movieEndTime
+   else if cTime is among the items of "start,beginning" then
+      set the currenttime of moviePlayer to 0
+   else
+      set the currenttime of moviePlayer to cTime
+   end if
+   focus on moviePlayer
+end movie_Time
+
+getprop movie_Duration [useSpotLight]
+   -- not quite the same as shotcut duration :(
+   put the movie_Player of the target into moviePlayer
+   if useSpotLight is true then
+      put the filename of moviePlayer into movieFile
+      put spotlight_GetMovieDurationInSeconds (movieFile) into movieSeconds
+   else
+      put the timescale of moviePlayer into someScale
+      put the duration of moviePlayer / someScale into movieSeconds
+   end if
+   --
+   put time_SecondsToHMSF (movieSeconds) into hmsf
+   --
+   return hmsf
+end movie_Duration
+
+getprop movie_Hash
+   put the movie_Player of the target into moviePlayer
+   put the filename of moviePlayer into movieFile
+   --
+   put file_Md5Hash (movieFile) into movieHash
+   --
+   return movieHash
+end movie_Hash
+
+getprop shotcut_Hash
+   -- A MD5 hash of a media file (whole file if less than 2 MB, or first MB followed by last MB for files larger than 2 MB)
+   put the movie_Player of the target into moviePlayer
+   put the filename of moviePlayer into movieFile
+   --
+   put melt_GetShotCutHash (movieFile) into movieHash
+   --
+   return movieHash 
+end shotcut_Hash
+
+getprop file_Tail [pMbNum]
+   -- Using the -c switch (2MB = 2 * 1024 * 1024 = 2097152 bytes):
+   -- tail -c 2097152 myapp.log      
+   -- tail -c 2m myapp.log
+   
+   put the movie_Player of the target into moviePlayer
+   put the filename of moviePlayer into movieFile
+   --
+   put file_GetTail (movieFile, pMbNum) into lastMB
+   --
+   return lastMB
+end file_Tail
+
+getprop file_Head [pMbNum]
+   -- head -c 2M input.file
+   put the movie_Player of the target into moviePlayer
+   put the filename of moviePlayer into movieFile
+   --
+   put file_GetHead (movieFile, pMbNum) into firstMB
+   --
+   return firstMB
+end file_Head
+
+
+--> Deps
+-
 function time_HmsfToSeconds hmsf, pFramesPerSecond
    if pFramesPerSecond is not a number then
       put 25 into pFramesPerSecond
@@ -92,6 +382,18 @@ function time_SecondsToHMSF someSeconds, someFrames
    return it
 end time_SecondsToHMSF
 
+
+--> Events
+-
+on currentTimeChanged newTime
+   put the event_Message [newTime]  of me into messageName
+   if messageName is empty then pass currentTimeChanged
+   
+   set the movie_Paused of me to true
+   put messageName
+   do messageName
+end currentTimeChanged
+
 getprop event_Array [newTime]
    put LocalArray ["events"] into eventArray
    if newTime is empty then return eventArray
@@ -124,12 +426,11 @@ setprop event_Message [newTime] messageName
    end if
    return LocalArray ["events"]
 end event_Message
-   
-   
-   
-   --> Movie
-   -
-   getprop movie_ControllerID
+
+
+--> Movie
+-
+getprop movie_ControllerID
    put the movie_Player of the target into moviePlayer
    return the moviecontrollerid of moviePlayer
 end movie_ControllerID
@@ -165,7 +466,9 @@ setprop movie_File someFile
    set the filename of moviePlayer to someFile
    
    -- movie_ResetInfo movieView
-   set the view_Rect of movieView to oRect
+   -- set the view_Rect of movieView to oRect
+   LayoutControl oRect
+   --
    focus on moviePlayer
    unlock screen
 end movie_File
@@ -229,102 +532,24 @@ getprop movie_ControllerShowing
    end if
 end movie_ControllerShowing
 
-setprop movie_ControllerShowing boolean
+setprop movie_ControllerShowing someBoolean
    put the movie_View of the target into movieView
    put the movie_Player of movieView into moviePlayer
    put the movie_Controller of movieView into movieController
    
    if exists(movieController) then
-      set the visible of movieController to not boolean
-      -- set the showcontroller of moviePlayer to boolean
-      set the alwaysbuffer of moviePlayer to not boolean
+      set the visible of movieController to not someBoolean
+      -- set the showcontroller of moviePlayer to someBoolean
+      set the alwaysbuffer of moviePlayer to not someBoolean
    else
-      put the qt_ScrollBarWidth of moviePlayer into qtScrollBarWidth
-      put the rect of movieView into movieRect
-      put the rect of moviePlayer into playerRect
-      
-      if movieRect = playerRect then
-         if boolean is true then
-            add qtScrollBarWidth to item 4 of movieRect
-         else
-            subtract qtScrollBarWidth from item 4 of movieRect
-         end if
-      end if
-      
       lock screen
-      set the showcontroller of moviePlayer to boolean
-      set the alwaysbuffer of moviePlayer to not boolean
-      set the view_Rect of movieView to movieRect
+      set the showcontroller of moviePlayer to someBoolean
+      -- set the alwaysbuffer of moviePlayer to not someBoolean
+      LayoutControl
       unlock screen
    end if
 end movie_ControllerShowing
 
-
---> Movie | Time
--
-getprop movie_Seconds
-   put the movie_Player of the target into moviePlayer
-   
-   put the timescale of moviePlayer into someScale
-   if someScale = 0 then return empty
-   put the currenttime of moviePlayer / someScale into movieSeconds
-   return movieSeconds
-end movie_Seconds
-
-setprop movie_Seconds movieSeconds
-   put the movie_Player of the target into moviePlayer
-   
-   switch movieSeconds
-      case "end"
-         put the duration of moviePlayer into movieTime
-         set the currenttime of moviePlayer to movieTime
-         break
-      case "start"
-         set the currenttime of moviePlayer to 0
-         break
-      default
-         put the timescale of moviePlayer into someScale
-         put round (movieSeconds * someScale) into movieTime
-         set the currenttime of moviePlayer to movieTime
-   end switch
-   focus on moviePlayer
-end movie_Seconds
-
-getprop movie_Time
-   put the movie_Player of the target into moviePlayer
-   if exists(moviePlayer) is false then return empty
-   
-   put the currenttime of moviePlayer into cTime
-   return cTime
-end movie_Time
-
-setprop movie_Time cTime
-   put the movie_Player of the target into moviePlayer
-   if exists(moviePlayer) is false then return empty
-   
-   if movieTime is "end" then
-      put the duration of moviePlayer into movieEndTime
-      set the currenttime of moviePlayer to movieEndTime
-   else if cTime is among the items of "start,beginning" then
-      set the currenttime of moviePlayer to 0
-   else
-      set the currenttime of moviePlayer to cTime
-   end if
-   focus on moviePlayer
-end movie_Time
-
-getprop movie_HMSF
-   put the movie_Player of the target into moviePlayer
-   
-   put the timescale of moviePlayer into someScale
-   if someScale = 0 then return empty
-   put the currenttime of moviePlayer / someScale into movieSeconds
-   return time_SecondsToHMSF(movieSeconds)
-end movie_HMSF
-
-setprop movie_HMSF hmsf
-   set the movie_Seconds of the target to hmsf
-end movie_HMSF
 
 --> Clip
 -
@@ -367,11 +592,13 @@ getprop clip_StartTime [tFormat]
          put sTime / someScale into startTimeInSeconds
          put time_SecondsToHMSF (startTimeInSeconds) into startTimeInHMSF
          return startTimeInHMSF
+      case "hms"
+         put the timescale of moviePlayer into someScale
+         put the starttime of moviePlayer into sTime
+         put sTime / someScale into startTimeInSeconds
+         put time_SecondsToHMS (startTimeInSeconds) into startTimeInHMS
+         return startTimeInHMS
       default
-         -- case false
-         -- case "s"
-         -- case "seconds"
-         
          put the timescale of moviePlayer into someScale
          put the starttime of moviePlayer into sTime
          put sTime / someScale into startTimeInSeconds
@@ -414,6 +641,11 @@ getprop clip_EndTime [tFormat]
       case "raw"
          put the endTime of moviePlayer into eTime
          return eTime
+      case "hms"
+         put the timescale of moviePlayer into someScale
+         put the endTime of moviePlayer / someScale into movieSeconds
+         put time_SecondsToHMS (movieSeconds) into endTimeInHMS
+         return endTimeInHMS
       case "hmsf"
       case "true"
          put the timescale of moviePlayer into someScale
@@ -500,76 +732,6 @@ end playPaused
 */
 
 
---> Events | Drag
--
-on keyDown kName
-   switch kName
-      case "i"
-         put the movie_Seconds of me into mSeconds
-         set the clip_StartTime of me to mSeconds
-         break
-      case "o"
-         put the movie_Seconds of me into mSeconds
-         set the clip_EndTime of me to mSeconds
-         break
-      default
-         pass keyDown
-   end switch
-end keyDown
-
-on dragEnter
-   -- if the drag_Controller of me is not empty then
-   set the acceptdrop to true
-   -- end if
-   pass dragEnter
-end dragEnter
-
-on dragDrop
-   put the dragdata ["files"] into someFile
-   if file_IsVideo (someFile) then
-      set the movie_File of me to someFile
-      set the movie_Paused of me to false
-   end if
-   
-   put the dragdata ["text"] into droppedText
-   if word 1 of droppedText is "opnDrop" then
-      put the dragsource into targetObject
-      put the view_Object of targetObject into someView
-      if exists(someView) then
-         if the view_IsClass ["View|Movie|Controller"] of someView is true then
-            lcw_Notify "True"
-         else
-            lcw_Notify merge("Source [[the name of targetOject]] is not a movie controller!"), true
-         end if
-      else
-         lcw_Notify merge("Error: source [[the name of targetOject]] is not within a view!"), true
-      end if 
-   else
-      -- lcw_Notify (droppedText & CR & CR & the dragsource)
-   end if
-   pass dragDrop
-end dragDrop
-
-
---> Events | Handlers
--
-on movie_MouseDown movieView
-   menu_PopUp
-end movie_MouseDown
-
-on movie_MouseUp
-   -- do nothing
-end movie_MouseUp
-
-on movie_MouseDoubleUp
-   -- do nothing
-end movie_MouseDoubleUp
-
-on movie_MouseRelease
-   -- do nothing
-end movie_MouseRelease
-
-
 --> Objects
 -
 getprop movie_View
@@ -580,49 +742,33 @@ getprop view_Object
    return the long id of me
 end view_Object
 
--- getprop model_Object
--- for bookmarks?
-return the long id of me
-end model_Object
-
 getprop movie_Player
-   return the long id of player 1 of me
+   return _PlayerObject()
 end movie_Player
 
-getprop menu_Button
-return the long id of button "_Menu Button" of me
-end menu_Button
- 
 getprop view_Background
-    return the long id of control "_View Background" of me
+   return the long id of control "_View Background" of me
 end view_Background
+
+private function _PlayerObject
+   put the long id of player 1 of me into mPlayer
+   return mPlayer
+end _PlayerObject
 
 
 --> Object | Links
 -
 getprop metadata_View
-    put "View|Movie|Note" into viewPath
-    return view_GetTemplateObject (viewPath)
+   put "View|Movie|Note" into viewPath
+   return view_GetTemplateObject (viewPath)
 end metadata_View
-
--- getprop movieController_View
-    return the view_TwoWayLink ["movie_Paused"] of me
-end movieController_View
-
--- setprop movieController_View [addView] movieControllerRefs
-    if addView is true then
-        set the view_AddTwoWayPropertyLink ["movie_Paused"] of me to movieControllerRefs
-    else
-        set the view_TwoWayPropertyLink ["movie_Paused"] of me to movieControllerRefs
-    end if
-end movieController_View
 
 
 --> Geometry
 -
 on resizeControl
-    LayoutControl the rect of me
-    pass resizeControl
+   LayoutControl the rect of me
+   pass resizeControl
 end resizeControl
 
 setprop view_Rect someRect
