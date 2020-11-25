@@ -1,10 +1,10 @@
-﻿script "Global_Movie_Menu"
+﻿script "Global | Movie | Menu"
 --> MetaData
 -
 license: GPLv3
-name: Global_Movie_Menu
+name: Global | Movie | Menu
 type: controller
-version: 0.2
+version: 0.3
 
 
 --> Menu | Props
@@ -50,7 +50,7 @@ on mDouble_Up indexView, someLine
          replace comma with CR in it
          put it
    end switch
-end mDouble_Up 
+end mDouble_Up
 
 getprop hiliteSelection_Param [mView]
    put the movie_ShowSelection of mView into someBoolean
@@ -105,8 +105,16 @@ on menu_ExportSelectedClip mPlayer, cutFast
    put the clip_StartTime [s] of mPlayer into sSeconds
    put the clip_EndTime [s] of mPlayer into eSeconds
    put the movie_File of mPlayer into someVideoFile
+   --
+   set the itemdelimiter to slash
+   put someVideoFile into pExportFilePath
+   put item -1 of pExportFilePath into shortExportFile
+   put lcw_Ask ("What would you like to call the exported clip?", shortExportFile) into shortExportFile
+   put shortExportFile into item -1 of pExportFilePath
+   --
    edl_ExportClip someVideoFile, sSeconds, eSeconds, pExportFilePath
    put the result into exportedVideoPath
+   --
    put exportedVideoPath
 end menu_ExportSelectedClip
 
@@ -147,6 +155,10 @@ end menu_HiliteSelection
 
 on _
 end _
+
+on submenu_Vimeo
+   return "Global | Vimeo | Menu"
+end submenu_Vimeo
 
 on submenu_Dev
    return "Dev | Menu"

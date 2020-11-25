@@ -78,20 +78,11 @@ end time_SecondsToHMSF
 --> ffmpeg | edl
 -
 command edl_ExportClip someVideoFile, sSeconds, eSeconds, pExportFilePath
-   if pExportFilePath = "ask" then
-      set the itemdelimiter to slash
-      put someVideoFile into pExportFilePath
-      put item -1 of pExportFilePath into shortExportFile
-      put lcw_Ask ("What would you like to call the exported clip?", shortExportFile) into shortExportFile
-      put shortExportFile into item -1 of pExportFilePath
-   end if
-   
-   ffmpeg_SplitVideo someVideoFile, sSeconds, eSeconds, pExportFilePath, cutFast
-   put the result into exportedVideoPath
-   
-   display_Video exportedVideoPath
-   -- set the filename of playerObject to exportedVideoPath
-   return exportedVideoPath
+   ffmpeg_SplitVideo someVideoFile, sSeconds, eSeconds, pExportFilePath
+   put the result into shellResult
+   --
+   display_Video pExportFilePath
+   return pExportFilePath
 end edl_ExportClip
 
 function edl_ConvertToMovieSeconds hmsfTimeWithHourStart, pAddFrames, pFPS
@@ -140,7 +131,6 @@ command ffmpeg_SplitVideo someVideoFile, sSeconds, eSeconds, pExportFileName, pM
    end if
    --
    put ffmpeg_ConstructSplitVideoShell (someVideoFile, sSeconds, eSeconds, pExportFileName, pMakeAccurate) into someShell
-   put someShell
    --
    set the cursor to watch
    put shell (someShell) into shellResult
@@ -148,16 +138,13 @@ command ffmpeg_SplitVideo someVideoFile, sSeconds, eSeconds, pExportFileName, pM
 end ffmpeg_SplitVideo
 
 function ffmpeg_ConstructSplitVideoShell someVideoFile, sSeconds, eSeconds, exportFileName, pMakeAccurate
-   shell_BashParamEscape someVideoFile
-   shell_BashParamEscape exportFileName
-   --
    put "ffmpeg" into someShell
    if pMakeAccurate is true then
-      put space & "-i" && someVideoFile after someShell
+      put space & "-i" && kwote (someVideoFile) after someShell
       put space & "-ss" && sSeconds after someShell -- fastest if first
    else
       put space & "-ss" && sSeconds after someShell -- fastest if first
-      put space & "-i" && someVideoFile after someShell
+      put space & "-i" && kwote (someVideoFile) after someShell
    end if
    --
    put eSeconds - sSeconds into dSeconds
@@ -165,7 +152,7 @@ function ffmpeg_ConstructSplitVideoShell someVideoFile, sSeconds, eSeconds, expo
    -- put space & "-to" && eSeconds after someShell
    --
    put space & "-c copy" after someShell -- keeps codecs the same and avoids reencoding
-   put space & exportFileName after someShell
+   put space & kwote (exportFileName) after someShell
    --
    return someShell
 end ffmpeg_ConstructSplitVideoShell

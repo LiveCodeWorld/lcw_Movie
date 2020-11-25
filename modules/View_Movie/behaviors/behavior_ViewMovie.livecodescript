@@ -501,7 +501,7 @@ getprop movie_PlaySelection
 end movie_PlaySelection
 
 setprop movie_PlaySelection someBoolean
-   set the playselection of the movie_Player of the target  to someBoolean
+   set the playselection of the movie_Player of the target to someBoolean
 end movie_PlaySelection
 
 getprop movie_ShowSelection

@@ -835,10 +835,18 @@ private command thumbnail_SetSmall snippetArray, @thumbNailURL, @thumbNailWidth
    put thumbNailArray ["url"] into thumbNailURL
    put thumbNailArray ["width"] into thumbNailWidth
 end thumbnail_SetSmall
-   
+
 
 --> Deps
 -
+function secret_Get secretName
+   -- for server use only
+   if the environment is not "server" then pass "secret_Get"
+   --
+   put rigFetchConfigItem (secretName) into someSecret
+   return someSecret
+end secret_Get
+
 command date_Convert8601 @revisionDate
    -- converts to "internet date"
    replace "T" with return in revisionDate

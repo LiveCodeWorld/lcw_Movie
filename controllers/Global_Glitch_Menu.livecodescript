@@ -46,6 +46,9 @@ on submenu_Movie
    return "Global | Movie | Menu"
 end submenu_Movie
 
+on _
+end _
+
 on submenu_Dev
    return "Dev | Menu"
 end submenu_Dev
@@ -53,6 +56,11 @@ end submenu_Dev
 
 --> Dev | Menu
 -
+on menu_EditBehavior playerObject
+   put the behavior of playerObject into bObject
+   edit the script of bObject
+end menu_EditBehavior
+
 on menu_RevealMovie playerObject
    put the filename of playerObject into mFile
    put mFile
