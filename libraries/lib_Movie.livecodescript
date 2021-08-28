@@ -28,10 +28,10 @@ getprop movie_PlayClip
 end movie_PlayClip
 
 setprop movie_PlayClip someBoolean
-    set the playselection of the movie_Player of the target  to someBoolean
- end movie_PlayClip
- 
- getprop movie_StartTime [tFormat]
+   set the playselection of the movie_Player of the target  to someBoolean
+end movie_PlayClip
+
+getprop movie_StartTime [tFormat]
    put the clip_StartTime [tFormat] of the target into sTime
    return sTime  
 end movie_StartTime
@@ -316,105 +316,105 @@ end media_Height
 --> Movie | Play
 -
 on movie_Play movieFile, bookmarkTitle, movieView
-    if exists(movieView) is false then
-        put the movie_View of the target into movieView
-        if exists(movieView) is false then return merge("Error: movie view does not exist!") 
-    end if
-    if movieFile is empty then put the movie_File of movieView into movieFile
-    
-    if file_IsVideo(movieFile) is false then
-        return merge("Error: file [[movieFile]] is not a video!")
-    else
-        -- set the movie_File of movieView to empty
-        object_GoTo movieView
-        movie_PlayUrlOrFile movieFile, movieView, bookmarkTitle
-    end if
+   if exists(movieView) is false then
+      put the movie_View of the target into movieView
+      if exists(movieView) is false then return merge("Error: movie view does not exist!") 
+   end if
+   if movieFile is empty then put the movie_File of movieView into movieFile
+   
+   if file_IsVideo(movieFile) is false then
+      return merge("Error: file [[movieFile]] is not a video!")
+   else
+      -- set the movie_File of movieView to empty
+      object_GoTo movieView
+      movie_PlayUrlOrFile movieFile, movieView, bookmarkTitle
+   end if
 end movie_Play
 
 on movie_PlayUrlOrFile movieFile, movieView, bookmarkTitle
-    set the cursor to watch
-    lock screen
-    set the movie_File of movieView to movieFile
-    set the movie_BookMark of movieView to bookmarkTitle
-    set the movie_PlayRate of movieView to 1
-    set the movie_PlayStatus of movieView to "play"
-    unlock screen
-    
-    if the stack_IsVisible of movieView is false then set the stack_IsVisible of movieView to true
-    focus on the movie_Player of movieView
+   set the cursor to watch
+   lock screen
+   set the movie_File of movieView to movieFile
+   set the movie_BookMark of movieView to bookmarkTitle
+   set the movie_PlayRate of movieView to 1
+   set the movie_PlayStatus of movieView to "play"
+   unlock screen
+   
+   if the stack_IsVisible of movieView is false then set the stack_IsVisible of movieView to true
+   focus on the movie_Player of movieView
 end movie_PlayUrlOrFile
 
 function movie_ReversePlayStatus playStatus
-    switch playStatus
-        case "stop"
-            return "play"
-        case "play"
-            return "pause"
-        case "pause"
-            return "play"
-    end switch
+   switch playStatus
+      case "stop"
+         return "play"
+      case "play"
+         return "pause"
+      case "pause"
+         return "play"
+   end switch
 end movie_ReversePlayStatus
 
 setprop movie_DisplayPaused boolean
-    -- automatically set by messages
-    put the movieController_View of the target into movieControllerViews
-    repeat for each line movieControllerView in movieControllerViews
-        if exists(movieControllerView) then
-            set the movie_Paused of movieControllerView to boolean
-        end if
-    end repeat
+   -- automatically set by messages
+   put the movieController_View of the target into movieControllerViews
+   repeat for each line movieControllerView in movieControllerViews
+      if exists(movieControllerView) then
+         set the movie_Paused of movieControllerView to boolean
+      end if
+   end repeat
 end movie_DisplayPaused
 
 getprop movie_PlayStatus
-    put the movie_Player of the target into moviePlayer
-    
-    put the paused of moviePlayer into isPaused
-    put the movie_Time of moviePlayer = 0 into atStart
-     
-    if atStart and isPaused then
-        return "stop"
-    else if isPaused then
-        return "pause"
-    else
-        return "play"
-    end if
+   put the movie_Player of the target into moviePlayer
+   
+   put the paused of moviePlayer into isPaused
+   put the movie_Time of moviePlayer = 0 into atStart
+   
+   if atStart and isPaused then
+      return "stop"
+   else if isPaused then
+      return "pause"
+   else
+      return "play"
+   end if
 end movie_PlayStatus
- 
+
 setprop movie_PlayStatus playStatus
-    put the movie_Player of the target into moviePlayer
-    switch playStatus
-        case "play"
-            set the paused of moviePlayer to false
-            break
-        case "pause"
-            set the paused of moviePlayer to true
-            break
-        case "stop"
-            set the paused of moviePlayer to true
-            set the movie_Time of moviePlayer to 0
-            break
-    end switch
-    focus on moviePlayer
+   put the movie_Player of the target into moviePlayer
+   switch playStatus
+      case "play"
+         set the paused of moviePlayer to false
+         break
+      case "pause"
+         set the paused of moviePlayer to true
+         break
+      case "stop"
+         set the paused of moviePlayer to true
+         set the movie_Time of moviePlayer to 0
+         break
+   end switch
+   focus on moviePlayer
 end movie_PlayStatus
 
 on remote_PlayMovie
-    put the movie_View of the target into movieView
-    if the movie_PlayStatus of movieView is "play" then
-        -- start again
-        -- movie_Play
-        -- set the movie_Size of group 1 to "full"
-        beep
-    else
-        -- put "Interactive"
-        get the movie_Size of movieView
-        -- put it
-        if it is "full" then
-            put "medium" into layoutName 
-            send "menu_RestoreMoviePosition layoutName, movieView" to movieView
-        else
-            set the movie_Size of group 1 to "full"
-        end if
-    end if
+   put the movie_View of the target into movieView
+   if the movie_PlayStatus of movieView is "play" then
+      -- start again
+      -- movie_Play
+      -- set the movie_Size of group 1 to "full"
+      beep
+   else
+      -- put "Interactive"
+      get the movie_Size of movieView
+      -- put it
+      if it is "full" then
+         put "medium" into layoutName 
+         send "menu_RestoreMoviePosition layoutName, movieView" to movieView
+      else
+         set the movie_Size of group 1 to "full"
+      end if
+   end if
 end remote_PlayMovie
 
 
@@ -427,162 +427,162 @@ Except I guess if QuickTime is not available.
 */
 
 getprop movie_ImageShowing
-    put the movie_View of the target into movieView
-    put the movie_Player of the target into moviePlayer
-     
-    put the movie_ImageFile of the target into movieImageFile
-    if movieImageFile is empty then return false
-    else if the movie_File of the target = movieImageFile then
-        return true
-    else
-        return false
-    end if
+   put the movie_View of the target into movieView
+   put the movie_Player of the target into moviePlayer
+   
+   put the movie_ImageFile of the target into movieImageFile
+   if movieImageFile is empty then return false
+   else if the movie_File of the target = movieImageFile then
+      return true
+   else
+      return false
+   end if
 end movie_ImageShowing
 
 setprop movie_ImageShowing boolean
-    put the movie_View of the target into movieView
-    put the movie_Player of the target into moviePlayer
-     
-    put the movie_ImageFile of the target into movieImageFile
-    lock screen
-    if boolean is true then
-        put the movie_File of movieView into movieFile
-        set the filename of moviePlayer to movieImageFile
-        set the uOPN ["movie_LastFile"] of movieView to movieFile
-         
-        set the uOPN ["movie_LastShowcontroller"] of movieView to the showcontroller of moviePlayer
-        set the uOPN ["movie_LastTime"] of movieView to the movie_Seconds of movieView
-        set the movie_ControllerShowing of movieView to false
-    else
-        set the movie_File of moviePlayer to the uOPN ["movie_LastFile"] of movieView
-         
-        set the movie_ControllerShowing of movieView to the uOPN ["movie_LastShowcontroller"] of movieView
-        set the movie_Seconds of movieView to the uOPN ["movie_LastTime"] of movieView
-    end if
-    unlock screen
+   put the movie_View of the target into movieView
+   put the movie_Player of the target into moviePlayer
+   
+   put the movie_ImageFile of the target into movieImageFile
+   lock screen
+   if boolean is true then
+      put the movie_File of movieView into movieFile
+      set the filename of moviePlayer to movieImageFile
+      set the uOPN ["movie_LastFile"] of movieView to movieFile
+      
+      set the uOPN ["movie_LastShowcontroller"] of movieView to the showcontroller of moviePlayer
+      set the uOPN ["movie_LastTime"] of movieView to the movie_Seconds of movieView
+      set the movie_ControllerShowing of movieView to false
+   else
+      set the movie_File of moviePlayer to the uOPN ["movie_LastFile"] of movieView
+      
+      set the movie_ControllerShowing of movieView to the uOPN ["movie_LastShowcontroller"] of movieView
+      set the movie_Seconds of movieView to the uOPN ["movie_LastTime"] of movieView
+   end if
+   unlock screen
 end movie_ImageShowing
 
 getprop movie_ImageFile
-    put the movie_View of the target into movieView
-    return the uOPN ["movie_ImageFile"] of movieView
+   put the movie_View of the target into movieView
+   return the uOPN ["movie_ImageFile"] of movieView
 end movie_ImageFile
 
 setprop movie_ImageFile someFile
-    put the movie_View of the target into movieView
-    set the uOPN ["movie_ImageFile"] of movieView to someFile
-    set the movie_ImageShowing of movieView to true
+   put the movie_View of the target into movieView
+   set the uOPN ["movie_ImageFile"] of movieView to someFile
+   set the movie_ImageShowing of movieView to true
 end movie_ImageFile
 
 
 --> Movie | Display
 -
 on movie_ShowControllerPalette someBoolean, movieView
-    put "View|Movie|Controller|Quicktime" into movieControllerStackName
-    if someBoolean is true then
-        palette stack movieControllerStackName
-         
-        put the mobile_Name of group 1 of stack movieControllerStackName into movieControllerView
-        set the movie_View of movieControllerView to movieView
-    else if movie_ControllerPaletteShowing() then
-        close stack movieControllerStackName
-    end if
+   put "View|Movie|Controller|Quicktime" into movieControllerStackName
+   if someBoolean is true then
+      palette stack movieControllerStackName
+      
+      put the mobile_Name of group 1 of stack movieControllerStackName into movieControllerView
+      set the movie_View of movieControllerView to movieView
+   else if movie_ControllerPaletteShowing() then
+      close stack movieControllerStackName
+   end if
 end movie_ShowControllerPalette
 
 function movie_ControllerPaletteShowing
-    put "View|Movie|Controller|Quicktime" into movieControllerStackName
-    return movieControllerStackName is among the lines of the openstacks
+   put "View|Movie|Controller|Quicktime" into movieControllerStackName
+   return movieControllerStackName is among the lines of the openstacks
 end movie_ControllerPaletteShowing
 
 getprop movie_DisplaySelection
-    return the showselection of the movie_Player of the target
+   return the showselection of the movie_Player of the target
 end movie_DisplaySelection
 
 setprop movie_DisplaySelection someBoolean
-    set the showselection of the movie_Player of the target  to someBoolean
- end movie_DisplaySelection
- 
+   set the showselection of the movie_Player of the target  to someBoolean
+end movie_DisplaySelection
+
 getprop movie_InPoint
-    put the movie_View of the target into movieView
-    if exists(movieView) is false then return empty
-    put the movie_Player of movieView into moviePlayer
-     
-    put the timescale of moviePlayer into someScale
-    if someScale = 0 then return empty
-    put the starttime of moviePlayer into movieTime
-    return movieTime / someScale
+   put the movie_View of the target into movieView
+   if exists(movieView) is false then return empty
+   put the movie_Player of movieView into moviePlayer
+   
+   put the timescale of moviePlayer into someScale
+   if someScale = 0 then return empty
+   put the starttime of moviePlayer into movieTime
+   return movieTime / someScale
 end movie_InPoint
 
 setprop movie_InPoint movieSeconds
-    put the movie_View of the target into movieView
-    if exists(movieView) is false then return empty
-    put the movie_Player of movieView into moviePlayer
-     
-    put the timescale of moviePlayer into someScale
-    if someScale = 0 then return empty
-    movieConvertTime movieSeconds
-    
-    if movieSeconds is "end" then
-        put the duration of moviePlayer into movieTime
-    else
-        put round(movieSeconds * someScale) into movieTime
-    end if
-    set the starttime of moviePlayer to movieTime
-     
-    put the metadata_View of movieView into metadataView
-    if exists(metadataView) then
-        set the display_InPoint of metaDataView to movieSeconds
-    end if
-    focus on moviePlayer
+   put the movie_View of the target into movieView
+   if exists(movieView) is false then return empty
+   put the movie_Player of movieView into moviePlayer
+   
+   put the timescale of moviePlayer into someScale
+   if someScale = 0 then return empty
+   movieConvertTime movieSeconds
+   
+   if movieSeconds is "end" then
+      put the duration of moviePlayer into movieTime
+   else
+      put round(movieSeconds * someScale) into movieTime
+   end if
+   set the starttime of moviePlayer to movieTime
+   
+   put the metadata_View of movieView into metadataView
+   if exists(metadataView) then
+      set the display_InPoint of metaDataView to movieSeconds
+   end if
+   focus on moviePlayer
 end movie_InPoint
 
 getprop movie_OutPoint
-    put the movie_Player of the target into moviePlayer
-    
-    put the timescale of moviePlayer into someScale
-    if someScale = 0 then return empty
-    put the endtime of moviePlayer into movieTime
-    return movieTime / someScale
+   put the movie_Player of the target into moviePlayer
+   
+   put the timescale of moviePlayer into someScale
+   if someScale = 0 then return empty
+   put the endtime of moviePlayer into movieTime
+   return movieTime / someScale
 end movie_OutPoint
 
 setprop movie_OutPoint movieSeconds
-    put the movie_Player of the target into moviePlayer
-    
-    put the timescale of moviePlayer into someScale
-    if someScale = 0 then return empty
-    movieConvertTime movieSeconds
-    
-    if movieSeconds is "end" then
-        put the duration of moviePlayer into movieTime
-    else
-        put round(movieSeconds * someScale) into movieTime
-    end if
-    set the endtime of moviePlayer to movieTime
-     
-    try
-        put the metadata_View of the target into metadataView
-        if exists(metadataView) then
-            set the display_OutPoint of metaDataView to movieSeconds
-        end if
-    end try
-    focus on moviePlayer
+   put the movie_Player of the target into moviePlayer
+   
+   put the timescale of moviePlayer into someScale
+   if someScale = 0 then return empty
+   movieConvertTime movieSeconds
+   
+   if movieSeconds is "end" then
+      put the duration of moviePlayer into movieTime
+   else
+      put round(movieSeconds * someScale) into movieTime
+   end if
+   set the endtime of moviePlayer to movieTime
+   
+   try
+      put the metadata_View of the target into metadataView
+      if exists(metadataView) then
+         set the display_OutPoint of metaDataView to movieSeconds
+      end if
+   end try
+   focus on moviePlayer
 end movie_OutPoint
 
 
 --> Private
 -
 command movieConvertTime @movieSeconds
-    -- in case it is not seconds
-    -- should not be currettime as this is not moviescale independent
-    if movieSeconds is a number then return empty
-    set the itemdelimiter to ":"
-    if the number of items of movieSeconds is 4 then
-        put time_HmsfToSeconds(movieSeconds) into movieSeconds
-        return empty
-    else
-        get merge("Time not recognised: [[movieSeconds]]")
-        opn_Notify it
-        return it
-    end if
+   -- in case it is not seconds
+   -- should not be currettime as this is not moviescale independent
+   if movieSeconds is a number then return empty
+   set the itemdelimiter to ":"
+   if the number of items of movieSeconds is 4 then
+      put time_HmsfToSeconds(movieSeconds) into movieSeconds
+      return empty
+   else
+      get merge("Time not recognised: [[movieSeconds]]")
+      opn_Notify it
+      return it
+   end if
 end movieConvertTime
 
 
@@ -607,39 +607,39 @@ function time_HmsfToSeconds hmsf, pFramesPerSecond
 end time_HmsfToSeconds
 
 function time_SecondsToHMSF someSeconds, someFrames
-    put the numberformat into oFormat
-    set the numberformat to "##"
-     
-    put someSeconds div 3600 into someHours 
-    put someSeconds mod 3600 into secondsLeft
-     
-    put secondsLeft div 60 into someMinutes
-    put secondsLeft mod 60 into secondsLeft
-     
-    put trunc(secondsLeft) into someSeconds
-    put secondsLeft - someSeconds into someFraction
-     
-    if someFrames is empty then put round(someFraction * 25) into someFrames
-    add 0 to someFrames
-     
-    get someHours & ":" & someMinutes  & ":" & someSeconds  & ":" & someFrames
-    set the numberformat to oFormat
-    return it
+   put the numberformat into oFormat
+   set the numberformat to "##"
+   
+   put someSeconds div 3600 into someHours 
+   put someSeconds mod 3600 into secondsLeft
+   
+   put secondsLeft div 60 into someMinutes
+   put secondsLeft mod 60 into secondsLeft
+   
+   put trunc(secondsLeft) into someSeconds
+   put secondsLeft - someSeconds into someFraction
+   
+   if someFrames is empty then put round(someFraction * 25) into someFrames
+   add 0 to someFrames
+   
+   get someHours & ":" & someMinutes  & ":" & someSeconds  & ":" & someFrames
+   set the numberformat to oFormat
+   return it
 end time_SecondsToHMSF
 
 
 --> XML
 -
 on xml_CheckRevError theResult
-    if char 1 to 6 of theResult is "xmlerr" then
-        opn_Notify theResult
-        exit to top
-    end if
- end xml_CheckRevError
- 
- 
- --> Deps
- -
+   if char 1 to 6 of theResult is "xmlerr" then
+      opn_Notify theResult
+      exit to top
+   end if
+end xml_CheckRevError
+
+
+--> Deps
+-
 function file_IsVideo someFile, quickSearch, beAggressive
    set the itemdelimiter to "."
    if the platform = "MacOS" then

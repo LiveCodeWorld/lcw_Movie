@@ -43,6 +43,165 @@ getprop camera_DeviceNames
 end camera_DeviceNames
 
 
+--> Events | Drag
+-
+on dragDrop
+   put the keys of the dragData into dropKeys
+   put the dragData ["text"] into droppedURL
+   --
+   put the dragData ["html"] into droppedHTML
+   put "<p><a href='(.+\.html)'>.+</a></p>" into wikiHtmlURlReg
+   replace "'" with quote in wikiHtmlURlReg
+   --
+   switch
+      case "image" is among the lines of dropKeys
+         put the dragData ["image"] into imageContents
+         put "image" & CR & line 1 of imageContents
+         break
+      case droppedURL begins with "https://www.bbc.co.uk/iplayer/episode/"
+         -- case matchtext (droppedURL, "https://www.bbc.co.uk/iplayer/episode/(.+)")
+         put droppedURL
+         break
+      case droppedURL begins with "https://www.youtube.com/watch?v="
+      case matchText (droppedURL, "https://www.youtube.com/watch?v=(.+)", tubeID)
+         put droppedURL
+         break
+      case matchText (droppedURL, "https://vimeo.com/(.+)", vimeoID)
+      case matchText (droppedURL, "https://vimeo.com/channels/staffpicks/(.+)", vimeoID)
+         put droppedURL
+         break
+      case matchText (droppedHTML, wikiHtmlURlReg, wikiHtmlURl)
+         put droppedHTML
+         break
+      default
+         -- do nothing
+         answer warning "I don't recognise this url!"
+         put droppedURL
+         break
+      default
+         put dropKeys
+   end switch
+   pass dragDrop
+end dragDrop
+
+on dragEnter
+   set the allowableDragActions to "link"
+   set the dragAction to "Link"
+   pass dragEnter
+end dragEnter
+
+
+--> Events
+-
+on mouseDown pButtonNum
+   switch pButtonNum
+      case 3
+         put empty into LocalArray ["mOffset"]
+         menu_PopUp "Global | Camera | Menu"
+         break
+      default
+         set the label of _graphicObject() to the params
+         
+         put _GetMouseOffset() into mOffset
+         put mOffset into LocalArray ["mOffset"]
+   end switch
+end mouseDown
+
+on mouseEnter
+   focus on me
+   pass mouseEnter
+end mouseEnter
+
+on mouseMove
+   if the mouse is not "down" then pass mouseMove
+   -- set the label of _graphicObject() to the params
+   
+   put the stack_Name of me into stackName
+   put LocalArray ["mOffset"] into mOffset
+   if mOffset is empty then pass mouseMove
+   
+   -- put the globalloc of the loc of me & CR & the loc of stack stackName & CR & mOffset
+   --
+   put the globalloc of the mouseloc into newLoc
+   --
+   add item 1 of mOffset to item 1 of newLoc
+   add item 2 of mOffset to item 2 of newLoc
+   --
+   set the loc of stack stackName to newLoc
+   --
+   pass mouseMove
+end mouseMove
+
+on resizeControl   
+   put the rect of me into viewRect
+   LayoutControl viewRect
+end resizeControl
+
+
+--> Frame
+-
+getprop displayed_Data
+   
+end displayed_Data
+
+setprop displayed_Data dData
+   
+end displayed_Data
+
+
+--> Frame
+-
+getprop stack_Frame
+   put the stack_Name of me into stackName
+   --
+   put the decorations of stack stackName is empty into isFrameless
+   put the mode of stack stackName into sMode
+   --
+   switch
+      case isFrameless
+         return "frameless"
+      case sMode = 4
+         return "palette"
+      default
+         return "toplevel"
+   end switch
+end stack_Frame
+
+setprop stack_Frame frameStyle
+   put the stack_Name of me into stackName
+   --
+   switch frameStyle
+      case false
+      case empty
+      case "frameless"
+         set the decorations of stack stackName to empty
+         break
+      case "palette"
+         -- palette of stack stackName
+         set the style of stack stackName to "palette"
+         set the decorations of stack stackName to "default"
+         break
+      case true
+      case "toplevel"
+      default
+         set the style of stack stackName to "toplevel"
+         set the decorations of stack stackName to "default"
+   end switch
+end stack_Frame
+
+getprop system_Window
+   put the stack_Name of me into stackName
+   put the systemwindow of stack stackName into someBoolean
+   return someBoolean
+end system_Window
+
+setprop system_Window someBoolean
+   put the stack_Name of me into stackName
+   set the systemwindow of stack stackName to someBoolean
+   return someBoolean
+end system_Window
+
+
 --> Audio | Device
 -
 getprop audio_DeviceName
@@ -100,18 +259,6 @@ command camera_DeleteAll pCameraNames
    end repeat
    delete variable LocalArray
 end camera_DeleteAll
-
-getprop system_Window
-   put the stack_Name of me into stackName
-   put the systemwindow of stack stackName into someBoolean
-   return someBoolean
-end system_Window
-
-setprop system_Window someBoolean
-   put the stack_Name of me into stackName
-   set the systemwindow of stack stackName to someBoolean
-   return someBoolean
-end system_Window
 
 getprop graphic_Shape
    put _graphicObject() into gObject
@@ -234,46 +381,8 @@ setprop camera_DeviceID deviceID
 end camera_DeviceID
 
 
---> Frame
+--> Snap
 -
-getprop stack_Frame
-   put the stack_Name of me into stackName
-   --
-   put the decorations of stack stackName is empty into isFrameless
-   put the mode of stack stackName into sMode
-   --
-   switch
-      case isFrameless
-         return "frameless"
-      case sMode = 4
-         return "palette"
-      default
-         return "toplevel"
-   end switch
-end stack_Frame
-
-setprop stack_Frame frameStyle
-   put the stack_Name of me into stackName
-   --
-   switch frameStyle
-      case false
-      case empty
-      case "frameless"
-         set the decorations of stack stackName to empty
-         break
-      case "palette"
-         -- palette of stack stackName
-         set the style of stack stackName to "palette"
-         set the decorations of stack stackName to "default"
-         break
-      case true
-      case "toplevel"
-      default
-         set the style of stack stackName to "toplevel"
-         set the decorations of stack stackName to "default"
-   end switch
-end stack_Frame
-
 getprop snap_Mask
    put the graphic_Object of me into graphicObject
    put the short name of the defaultstack into stackName
@@ -398,53 +507,6 @@ private function _ArrayFromTable deviceTable
 end _ArrayFromTable
 
 
---> Events
--
-on mouseDown pButtonNum
-   switch pButtonNum
-      case 3
-         put empty into LocalArray ["mOffset"]
-         menu_PopUp "Global | Camera | Menu"
-         break
-      default
-         set the label of _graphicObject() to the params
-         
-         put _GetMouseOffset() into mOffset
-         put mOffset into LocalArray ["mOffset"]
-   end switch
-end mouseDown
-
-on mouseEnter
-   focus on me
-   pass mouseEnter
-end mouseEnter
-
-on mouseMove
-   if the mouse is not "down" then pass mouseMove
-   -- set the label of _graphicObject() to the params
-   
-   put the stack_Name of me into stackName
-   put LocalArray ["mOffset"] into mOffset
-   if mOffset is empty then pass mouseMove
-   
-   -- put the globalloc of the loc of me & CR & the loc of stack stackName & CR & mOffset
-   --
-   put the globalloc of the mouseloc into newLoc
-   --
-   add item 1 of mOffset to item 1 of newLoc
-   add item 2 of mOffset to item 2 of newLoc
-   --
-   set the loc of stack stackName to newLoc
-   --
-   pass mouseMove
-end mouseMove
-
-on resizeControl   
-   put the rect of me into viewRect
-   LayoutControl viewRect
-end resizeControl
-
-
 --> Geometry
 -
 command LayoutControl pRect
@@ -559,6 +621,10 @@ end audio_DeviceID
 
 --> Objects
 -
+getprop camera_View
+   return the long id of me
+end camera_View
+
 getprop graphic_Object
    return _graphicObject()
 end graphic_Object

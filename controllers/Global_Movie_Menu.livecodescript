@@ -13,10 +13,17 @@ local LocalArray
 
 getprop menu_Target [tObject]
    put the movie_Player of tObject into mPlayer
-   if exists (mPlayer) is false then
+   if exists (mPlayer) is true then return mPlayer
+   
+   put the display_View of tObject into displayView
+   if exists (displayView) is false then return empty
+   
+   put the displayed_Object of displayView into viewObject
+   if exists (viewObject) is true then
+      return viewObject
+   else
       put the long id of player 1 of stack "lcw_Movie" into mPlayer
    end if
-   return mPlayer
 end menu_Target
 
 on mDouble_Up indexView, someLine
@@ -86,17 +93,17 @@ end movie_Play
 
 --> Global | Movie | Menu
 -
-on menu_PlayMovie mPlayer
-   -- movie_Play mPlayer
-   set the movie_Paused of mPlayer to false
-end menu_PlayMovie
+on submenu_Vlc
+   return "Global | VLC | Menu"
+end submenu_Vlc
 
-on menu_Shotcut mPlayer
-   put the filename of mPlayer into someFile
+on menu_DownloadYoutube mPlayer
+   put lcw_Ask ("Enter a Youtube url...", "https://www.youtube.com/watch?v=AGNNBoCjIP8") into youtubeUrl
+   youtube_DownloadVideo youtubeUrl
+   put the result into videoFile
    --
-   launch someFile with "/Applications/Shotcut.app"
-   -- launch someFile with "/System/Applications/QuickTime Player.app"
-end menu_Shotcut
+   set the filename of mPlayer to videoFile
+end menu_DownloadYoutube
 
 on _
 end _
@@ -113,9 +120,11 @@ on menu_ExportSelectedClip mPlayer, cutFast
    put shortExportFile into item -1 of pExportFilePath
    --
    edl_ExportClip someVideoFile, sSeconds, eSeconds, pExportFilePath
-   put the result into exportedVideoPath
+   put the result into shellResult
    --
-   put exportedVideoPath
+   display_Video pExportFilePath
+   --
+   put exportedVideoPath & CR & shellResult
 end menu_ExportSelectedClip
 
 on menu_DisplayEditMarkers mPlayer
@@ -145,149 +154,17 @@ end menu_DisplayEditMarkers
 on _
 end _
 
-on menu_ShowController mPlayer, someBoolean
-   set the movie_ControllerShowing of mPlayer to someBoolean 
-end menu_ShowController
-
-on menu_HiliteSelection mPlayer, someBoolean
-   set the movie_ShowSelection of mPlayer to someBoolean
-end menu_HiliteSelection
-
-on _
-end _
-
 on submenu_Vimeo
    return "Global | Vimeo | Menu"
 end submenu_Vimeo
 
+on _
+end _
+
+on menu_MenuHelp
+   launch_MenuHelp
+end menu_MenuHelp
+
 on submenu_Dev
-   return "Dev | Menu"
+   return menu_Create ("Global | Movie | Dev | Menu")
 end submenu_Dev
-
-
---> Dev | Menu
--
-on menu_EditBehavior mPlayer
-   put the behavior of mPlayer into bObject
-   edit the script of bObject
-end menu_EditBehavior
-
-on _
-end _
-
-on menu_SetCallBacks mPlayer
-   put "90000,soundNotes" & CR after messageList
-   put "27000,soundNotes" & CR after messageList
-   put "36000,soundNotes" & CR after messageList
-   put "180000,soundNotes" & CR after messageList
-   put "4000000,soundNotes" & CR after messageList
-   delete char -1 of messageList
-   
-   set the callbacks of mPlayer to messageList
-   put the callbacks of mPlayer
-   --
-   set the currenttime of mPlayer to 0
-   -- movie_Play mPlayer
-   set the movie_Paused of mPlayer to false
-end menu_SetCallBacks
-
-on _
-end _
-
-on menu_TestMeltXml
-   answer file "Select a melt file..."
-   put it into someFile
-   put url ("file:" & someFile) into someXML
-   --
-   put xml_ToArray (someXML, false, empty, true, true) into someArray
-   --
-   display_View someArray
-   --
-   put xml_FromArray (someArray)
-end menu_TestMeltXml
-
-on menu_TestConstructMelt mPlayer
-   put the melt_Array of mPlayer into mltArray
-   --
-   display_View mltArray, "melt_ConstructArray", "MLT"
-   put the result into dView
-   --
-   set the title_Menu of dView to "Global | Melt | Tree | Menu"
-   set the line_Menu of dView to "Global | Melt | Tree | Line | Menu"
-end menu_TestConstructMelt
-
-on _
-end _
-
-on menu_DownloadYoutube mPlayer
-   put lcw_Ask ("Enter a Youtube url...", "https://www.youtube.com/watch?v=AGNNBoCjIP8") into youtubeUrl
-   youtube_DownloadVideo youtubeUrl
-   put the result into videoFile
-   --
-   set the filename of mPlayer to videoFile
-end menu_DownloadYoutube
-
-on menu_MplayMovie mPlayer
-   put the movie_Player of mPlayer into pObject
-   put the movie_File of mPlayer into mFile
-   mplayer_Play mFile
-   -- put the result
-end menu_MplayMovie
-
-on menu_DisplayMovie mPlayer
-   answer file "Select a movie file..." -- with type "MPEG-4 movie"
-   put it into someFile
-   
-   put file_IsVideo (someFile)
-   
-   /*
-   put "file -I" && kwote (someFile) into someShell
-   put shell (someShell) into shellReply
-   -- /Users/BabyBlue/Movies/Guerrilla.mp4: video/mp4; charset=binary
-   set the itemdelimiter to ":"
-   put word 1 of item 2 of shellReply ="video" into isVideo
-   */
-   
-   put spotlight_GetFileKind (someFile) into fileKind
-   -- MPEG-4 movie
-   put fileKind & CR & CR & spotlight_GetFileInfo (someFile)
-end menu_DisplayMovie
-
-
-
---> END
-
-on insert_MoviePlayerMenu
-   return "Global | Movie | Video | Menu"
-end insert_MoviePlayerMenu
-
-on _
-end _
-
-on submenu_Capture
-   return "Global | Movie | Capture | Menu"
-end submenu_Capture
-
-on submenu_RecordMovie
-   return "Global | Movie | Record | Menu"
-end submenu_RecordMovie
-
-on submenu_BookMarkMenu
-   return "Global | Movie | Bookmarks | Menu", subMenu
-end submenu_BookMarkMenu
-
-on submenu_MovieCallMenu
-   menu_DoSub "Global | Movie | Call | Menu"
-end submenu_MovieCallMenu
-
-on submenu_QuickTime
-   return "Global | QuickTime | Menu"
-end submenu_QuickTime
-
-on submenu_MovieTools
-   return "Movie | Tools | Menu"
-end submenu_MovieTools
-
-on submenu_MovieWindowMenu
-   return "Global | Movie | Window | Menu"
-end submenu_MovieWindowMenu

@@ -25,16 +25,26 @@ end menu_Init
 
 --> Global | Vimeo | Menu
 -
-on menu_DisplayBrowser
-   display_View viewName, "Browser"
-end menu_DisplayBrowser
+on menu_DisplayVimeoData
+   put lcw_Ask ("Show data for video:", 229827899) into vimeoID
+   --
+   display_VimeoData vimeoID
+end menu_DisplayVimeoData
+
+on _
+end _
+
+on menu_VimeoThumbnails
+   put lcw_Ask ("Enter a vimeo id:", 229827899) into vimeoID
+   display_VimeoThumbnails vimeoID, 6
+end menu_VimeoThumbnails
 
 on menu_UploadVideoToWiki
    answer file "Which video do you want to move?"
    put it into mFile
    if it is empty then exit to top
    --
-   atopia_UploadAsset "conversation.wiki", mFile
+   atopia_RsyncPushAssetFolder mFile, "conversation.wiki"
    --
    if the result is empty then
       answer "Uploaded asset!"
@@ -85,9 +95,9 @@ end submenu_Dev
 
 --> Dev | Menu
 -
-on menu_Experiment mTarget
-   put mTarget
-end menu_Experiment
+-- on menu_DisplayBrowser
+display_View viewName, "Browser"
+end menu_DisplayBrowser
 
 
 --> Deps

@@ -11,6 +11,23 @@ version: 0.2
 -
 local LocalArray
 
+getprop menu_Target [tObject]
+   put the camera_View of tObject into cameraView
+   if exists (cameraView) then
+      put the camera_DeviceNames of cameraView into deviceNames
+      put deviceNames into LocalArray ["deviceNames"]
+      return cameraView
+   end if
+   
+   put the display_View of tObject into dView
+   if exists (dView) is false then return dView
+   
+   put the displayed_Object of dView into cameraView
+   if exists (cameraView) then return cameraView
+   
+   return tObject
+end menu_Target
+
 getprop stackColour_Params
    return "default,-,black,white,red,yellow,green,-,choose"
 end stackColour_Params
@@ -20,9 +37,12 @@ getprop camera_Param [cameraView]
    return deviceName
 end camera_Param
 
+getprop testClone_Params
+   return LocalArray ["deviceNames"]
+end testClone_Params
+   
 getprop camera_Params [cameraView]
-   put the camera_DeviceNames of cameraView into deviceNames
-   return deviceNames
+   return LocalArray ["deviceNames"]
 end camera_Params
 
 getprop audio_Param [cameraView]
@@ -35,20 +55,6 @@ getprop audio_Params [cameraView]
    return deviceNames
 end audio_Params
 
-getprop disabled_CloseCamera [cameraView]
-   put the camera_Name of cameraView is not empty into isVisible
-   return isVisible is false
-end disabled_CloseCamera
-
-getprop frame_Param [cameraView]
-   put the stack_Frame of cameraView into stackFrame
-   return stackFrame
-end frame_Param
-
-getprop frame_Params
-   return "frameless,palette,toplevel"
-end frame_Params
-
 getprop shape_Param [cameraView]
    put the graphic_Shape of cameraView into gShape
    return gShape
@@ -58,16 +64,20 @@ getprop shape_Params
    return "rectangle,roundrect,oval,-,hexagon,pentagon,triangle"
 end shape_Params
 
-getprop checked_PresentationMode
-   put camera_ListStackNames() into sNames
-   put camera_CheckAllFrameless (sNames) into someBoolean
-   return someBoolean
-end checked_PresentationMode
+getprop disabled_CloseCamera [cameraView]
+   put the camera_Name of cameraView is not empty into isVisible
+   return isVisible is false
+end disabled_CloseCamera
 
-getprop checked_SystemWindow [cameraView]
-   put the system_Window of cameraView into someBoolean
-   return someBoolean
-end checked_SystemWindow
+getprop stackStyle_Param [cameraView]
+   put the stack_Style of cameraView into sStyle
+   return sStyle
+end stackStyle_Param
+
+getprop stackStyle_Params [cameraView]
+   put the stack_Styles of cameraView into sStyles
+   return sStyles
+end stackStyle_Params
 
 
 --> Global | Camera | Menu
@@ -91,43 +101,17 @@ end submenu_Close
 on _
 end _
 
-on menu_Clone cameraView
-   put the stack_Label of cameraView into cameraName
-   if cameraName is empty then
-      put the stack_Name of cameraView into cameraName
-   end if
-   --
-   put lcw_Ask ("Give the new camera a name...", cameraName) into newCameraName
-   --
-   put the stack_Name of cameraView into stackNameToClone
-   stack_Clone stackNameToClone, newCameraName
-   --
-   put the result into clonedStack
-end menu_Clone
+on menu_DisplayRecordings
+   display_CameraRecordings
+end menu_DisplayRecordings
 
-on _
-end _
+on submenu_Frame
+   return "Global | Frame | Menu"
+end submenu_Frame
 
-on menu_Frame cameraView, fameStyle
-   set the stack_Frame of cameraView to fameStyle
-end menu_Frame
-
-on menu_SystemWindow cameraView
-   put the system_Window of cameraView into someBoolean
-   set the system_Window of cameraView to (not someBoolean)
-end menu_SystemWindow
-
-on menu_Shape cameraView, gShape
-   set the graphic_Shape of cameraView to gShape
-end menu_Shape
-
-on menu_EditLabel cameraView
-   put the stack_Label of cameraView into oldLabel
-   --
-   put lcw_Ask ("Edit the lable of this camera view...", oldLabel) into newLabel
-   --
-   set the stack_Label of cameraView to newLabel
-end menu_EditLabel
+on menu_StackStyle cameraView, sStyle
+   set the stack_Style of cameraView to sStyle
+end menu_StackStyle
 
 on _
 end _
@@ -151,9 +135,30 @@ on menu_ReopenCameras
    camera_ReOpenAll
 end menu_ReopenCameras
 
+on _
+end _
+
+on menu_CloseStack  cameraView
+   set the camera_Name of cameraView to empty
+   put the stack_Name of cameraView into stackName
+   --
+   put "delete stack" & kwote (stackName) into pigeon
+   send pigeon to cameraView in 2 ticks
+end menu_CloseStack
+
 
 --> Dev | Menu
 -
+on menu_TestClone cameraView, deviceName
+   put the camera_DeviceNames of cameraView
+   --
+   display_Camera deviceName
+end menu_TestClone
+
+on menu_Shape cameraView, gShape
+   set the graphic_Shape of cameraView to gShape
+end menu_Shape
+
 on menu_EditBehavior cameraView
    put the behavior of cameraView into bObject
    edit the script of bObject
@@ -229,3 +234,4 @@ getprop checked_Mask [cameraView]
    put the snap_Mask of cameraView into someBoolean
    return someBoolean
 end checked_Mask
+

@@ -97,10 +97,10 @@ setprop movie_NewBookMark [markPoints] bookmarkTitle
     set the uOPN ["movie_BookMark"] of movieView to bookmarkTitle
     
     put the movie_XML of movieView into movieXml
-    put revCreateXMLTree(movieXml, false, true, false) into movieXmlTreeID
+    put revXMLCreateTree(movieXml, false, true, false) into movieXmlTreeID
     movie_TreeAddBookMark movieXmlTreeID, bookmarkTitle, inPoint, outPoint, bookmarkTitle
     put revXMLText(movieXmlTreeID) into movieXml
-    revDeleteXMLTree movieXmlTreeID
+    revXMLDeleteTree movieXmlTreeID
      
     put the movie_File of movieView into movieFile
     movie_SetMovieXml movieFile, movieXml
@@ -120,7 +120,7 @@ end movie_NewBookMark
 function movie_BookmarksFromTime movieSeconds, movieFile
     put movie_GetMovieXml(movieFile, false) into movieXml
      
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     -- put movie_TreeGetFile(treeID) into movieUrl
     -- put movie_TreeGetTitle(treeID) into movieName
      
@@ -139,12 +139,12 @@ function movie_BookmarksFromTime movieSeconds, movieFile
             put inPoint,outPoint into bookmarkTitleArray [bookmarkTitle]
         end if
     end repeat
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
     return keys(bookmarkTitleArray)
 end movie_BookmarksFromTime
     
 function movie_ConstuctBookmarkTimeArray movieXml
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     -- put movie_TreeGetFile(treeID) into movieUrl
     -- put movie_TreeGetTitle(treeID) into movieName
      
@@ -162,7 +162,7 @@ function movie_ConstuctBookmarkTimeArray movieXml
          
         put inPoint,outPoint into bookmarkTitleArray [bookmarkTitle]
     end repeat
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
     return bookmarkTitleArray
 end movie_ConstuctBookmarkTimeArray
 
@@ -488,7 +488,7 @@ function movie_GetAllTags movieFile
     local allTags
     
     put movie_GetMovieXml(movieFile) into movieXml
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     put revXMLRootNode(treeID) into rootNode
     put revXMLNumberOfChildren(treeID, "movie", "bookMark", 0) into maxNum
     repeat with childNum = 1 to maxNum
@@ -499,44 +499,44 @@ function movie_GetAllTags movieFile
         list_Add newTags, allTags
     end repeat
      
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
     return allTags
 end movie_GetAllTags
 
 function movie_GetBookMarkData bookmarkTag, bookMarkTitle, movieFile
     put movie_GetMovieXml(movieFile) into movieXml
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     
     put revXMLMatchingNode(treeID, "movie", "bookMark", "name", bookMarkTitle, 1) into foundNode
     put foundNode & "/" & bookmarkTag into someNode
     put revXMLNodeContents(treeID, someNode) into bookmarkData
     xml_BlankError bookmarkData
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
     return bookmarkData
 end movie_GetBookMarkData
 
 on movie_SetBookMarkData bookmarkTag, bookMarkTitle, movieFile, bookmarkValue
     put movie_GetMovieXml(movieFile) into movieXml
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     
     put revXMLMatchingNode(treeID, "movie", "bookMark", "name", bookMarkTitle, 1) into foundNode
     xml_TreeAddChild bookmarkTag, foundNode, bookmarkValue, treeID
      
     put revXMLText(treeID) into movieXml
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
     movie_SetMovieXml movieFile, movieXml
 end movie_SetBookMarkData
 
 on movie_DeleteBookMark bookMarkTitle, movieFile
     put movie_GetMovieXml(movieFile) into movieXml
      
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     put revXMLMatchingNode(treeID, "movie", "bookMark", "name", bookMarkTitle, 1) into foundNode
     if foundNode is not empty then
         revDeleteXMLNode treeID, foundNode
     end if
     put revXMLText(treeID) into movieXml
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
     
     movie_SetMovieXml movieFile, movieXml
 end movie_DeleteBookMark
@@ -547,21 +547,21 @@ function movie_BookmarksFromFile movieFile, @movieUrl, @movieName
 end movie_BookmarksFromFile
 
 function movie_ExtractBookmarksFromXml movieXml, @movieUrl, @movieName
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     put revXMLRootNode(treeID) into rootNode
     
     put movie_TreeGetFile(treeID) into movieUrl
     put movie_TreeGetTitle(treeID) into movieName
      
     get revXMLAttributeValues(treeID, rootNode, "bookmark", "name", CR, 1)
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
     return it
 end movie_ExtractBookmarksFromXml
 
 on movie_DeconstructBookmarkXml movieXml, bookMarkTitle, @inPoint, @outPoint, @notes, @who, @clipType, @dateCreated, @bookMarkXml
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     movie_TreeDeconstructBookmark treeID, bookMarkTitle, inPoint, outPoint, notes, who, clipType, dateCreated, bookMarkXml
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
 end movie_DeconstructBookmarkXml
 
 on movie_SaveBookMarkData movieFile, bookMarkTitle, inPoint, outPoint, notes
@@ -571,7 +571,7 @@ on movie_SaveBookMarkData movieFile, bookMarkTitle, inPoint, outPoint, notes
         put movie_ConstructFirstBookMark(movieFile, bookMarkTitle, inPoint, outPoint, notes) into movieXml
         movie_SetMovieXml movieFile, movieXml
     else
-        put revCreateXMLTree(movieXml, false, true, false) into treeID
+        put revXMLCreateTree(movieXml, false, true, false) into treeID
         xml_CheckRevError treeID
          
         put revXMLMatchingNode(treeID, "movie", "bookMark", "name", bookMarkTitle, 1) into foundNode
@@ -585,13 +585,13 @@ on movie_SaveBookMarkData movieFile, bookMarkTitle, inPoint, outPoint, notes
         end if
         put revXMLText(treeID) into movieXml
         movie_SetMovieXml movieFile, movieXml
-        revDeleteXMLTree treeID
+        revXMLDeleteTree treeID
     end if
 end movie_SaveBookMarkData
 
 function movie_ConstructFirstBookMark movieFile, bookMarkTitle, inPoint, outPoint, notes
     put xml_Tag(empty, "movie") into movieXml
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
      
     set the itemdelimiter to "/"
     put the last item of movieFile into movieShortFile
@@ -602,13 +602,13 @@ function movie_ConstructFirstBookMark movieFile, bookMarkTitle, inPoint, outPoin
      
     movie_TreeAddBookMark treeID, bookMarkTitle, inPoint, outPoint, notes
     put revXMLText(treeID) into someXML
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
     return someXML
 end movie_ConstructFirstBookMark
 
 function movie_GetBookMarkXml bookMarkTitle, movieFile
     put movie_GetMovieXml(movieFile) into movieXml
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     put revXMLMatchingNode(treeID, "movie", "bookMark", "name", bookMarkTitle, 1) into foundNode
     if foundNode is empty then
         return empty
@@ -624,7 +624,7 @@ on movie_SaveBookMarkXml movieFile, bookMarkTitle, bookMarkXml
         put the last item of movieFile into movieShortFile
         put xml_Tag(bookMarkXml, "movie", "file", movieShortFile) into movieXml
     else
-        put revCreateXMLTree(movieXml, false, true, false) into treeID
+        put revXMLCreateTree(movieXml, false, true, false) into treeID
         xml_CheckRevError treeID
         put revXMLMatchingNode(treeID, "movie", "bookMark", "name", bookMarkTitle, 1) into foundNode
         if foundNode is not empty then
@@ -633,7 +633,7 @@ on movie_SaveBookMarkXml movieFile, bookMarkTitle, bookMarkXml
         put revXMLRootNode(treeID) into rootNode
         revAppendXML treeID, rootNode, bookMarkXml
         put revXMLText(treeID) into movieXml
-        revDeleteXMLTree treeID
+        revXMLDeleteTree treeID
     end if
     movie_SetMovieXml movieFile, movieXml
 end movie_SaveBookMarkXml
@@ -642,24 +642,24 @@ end movie_SaveBookMarkXml
 --> Movie | Xml | Model
 -
 function movie_GetTitle movieXml
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     put movie_TreeGetTitle(treeID) into someTitle
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
     return someTitle
 end movie_GetTitle
 
 on movie_SetMovieTitle someTitle, @movieXML
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     movie_TreeSetTitle someTitle, treeID
     put revXMLText(treeID) into movieXml
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
 end movie_SetMovieTitle
 
 on movie_SetMovieUrl urlOrFile, @movieXML
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     movie_TreeSetUrl urlOrFile, treeID
     put revXMLText(treeID) into movieXml
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
 end movie_SetMovieUrl
 
 getprop movie_XML
@@ -767,14 +767,14 @@ end movie_LocalBookMarkFolder
 -
 on movie_TreeConstruct movieFile, @treeID
     put movie_GetMovieXml(movieFile) into movieXml
-    put revCreateXMLTree(movieXml, false, true, false) into treeID
+    put revXMLCreateTree(movieXml, false, true, false) into treeID
     return the result
 end movie_TreeConstruct
 
 on movie_TreeSave treeID
     put movie_TreeGetFile(treeID) into movieFile
     put revXMLText(treeID) into movieXml
-    revDeleteXMLTree treeID
+    revXMLDeleteTree treeID
     movie_SetMovieXml movieFile, movieXml
 end movie_TreeSave
 
@@ -895,7 +895,7 @@ on movie_LoadDvdBookmarks targetObject
     
     put url ("file:" & dvdBookmarkFile) into pList
     
-    put revCreateXMLTree(pList, false, true, false) into pListTreeID
+    put revXMLCreateTree(pList, false, true, false) into pListTreeID
     put revXMLRootNode(pListTreeID) into rootNode
     -- put revXMLTree(pListTreeID, startNode, CR, tab, true, -1)
     
@@ -906,7 +906,7 @@ on movie_LoadDvdBookmarks targetObject
     
     put the movie_File of movieView into movieFile
     put movie_GetMovieXml(movieFile) into movieXml
-    put revCreateXMLTree(movieXml, false, true, false) into movieXmlTreeID
+    put revXMLCreateTree(movieXml, false, true, false) into movieXmlTreeID
      
     repeat for each line childName in childNames
         put startNode & "/" & childName into dictNode
@@ -931,8 +931,8 @@ on movie_LoadDvdBookmarks targetObject
     put revXMLText(movieXmlTreeID) into movieXml
     movie_SetMovieXml movieFile, movieXml
      
-    revDeleteXMLTree movieXmlTreeID
-    revDeleteXMLTree pListTreeID
+    revXMLDeleteTree movieXmlTreeID
+    revXMLDeleteTree pListTreeID
     
     -- put keys (bookMarkArray)
     -- movie_DeconstructBookmarkXml movieXml, bookmarkTitle, inPoint, outPoint, notes, who, clipType, dateCreated, bookMarkXml

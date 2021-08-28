@@ -23,6 +23,374 @@ local LocalArray
 
 --> Working on
 -
+setprop youtube_ID videoID
+   put youtube_HtmlEmbed (videoID) into iframeHTML
+   put html_GetIframeSrc (iframeHTML) into videoURL
+   put "https:" before videoURL
+   --
+   set the browser_URL of me to videoURL
+   -- set the browser_Html of me to iframeHTML
+   return videoURL
+end youtube_ID
+
+setprop vimeo_ID videoID
+   put vimeo_HtmlEmbed (videoID) into iframeHTML
+   put html_GetIframeSrc (iframeHTML) into videoURL
+   --
+   set the browser_URL of me to videoURL
+   -- set the browser_Html of me to iframeHTML
+   return videoURL
+end vimeo_ID
+
+on FillInData pDataA, pRow
+   -- pDataA ["@style"]
+   -- "VIMEO 229827899\n(double-click to edit caption)\n"
+   -- "HTML5 MP4 http://liquidlaw.org/assets/Legislative_Theatre_Animated_Presentation.mp4#t=01:08,02:08\n[[History of Legislative Theatre]]. Pekarna Magdalenske mreže, Pracownia Inspiracji Społecznych, Active Inquiry, Cooperativa Giolli. Animationsby : Lucija Smodiš, Brina Fekonja - [https://legilab4progress.wixsite.com/legilab4progress LegiLAB (2018)]"
+   
+   
+   put word 1 to -1 of pDataA ["text"] into itemText
+   switch word 1 of itemText
+      case "VIMEO"
+         put word 2 of itemText into videoID
+         set the vimeo_ID of me to videoID
+         break
+      case "YOUTUBE"
+         put word 2 of itemText into videoID
+         set the youtube_ID of me to videoID
+         break
+      case "HTMML5"
+         put word 2 of itemText into mimeType
+         put word 3 to -1 of line 1 of itemText into videoURL
+         --
+         --  set the movie_File of me to videoURL
+         set the browser_URL of me to videoURL
+         break
+      default
+         set the movie_File of me to empty
+   end switch
+end FillInData
+
+getProp dvRowControl
+  return the long id of me
+end dvRowControl
+
+setProp dvHilite [pHiliteColor] pBoolean
+   if pBoolean then
+      set the backgroundcolor of _BackgroundObject() to "purple"
+   else
+      set the backgroundcolor of _BackgroundObject() to pHiliteColor
+   end if
+end dvHilite
+
+
+--> Events | Drag
+-
+on dragDrop
+   drop_Video
+   pass dragDrop
+end dragDrop
+
+on dragEnter
+   set the allowableDragActions to "link"
+   set the dragAction to "Link"
+   pass dragEnter
+end dragEnter
+
+
+--> Drop
+-
+command drop_Video
+   put the keys of the dragData into dropKeys
+   put the dragData ["text"] into droppedURL
+   --
+   put the dragData ["html"] into droppedHTML
+   put "<p><a href='(.+\.html)'>.+</a></p>" into wikiHtmlURlReg
+   replace "'" with quote in wikiHtmlURlReg
+   --
+   switch
+      case droppedURL begins with "https://www.c-span.org/video/?"
+         drop_Youtube droppedURL
+         break
+      case "Files" is among the lines of dropKeys
+         drop_File
+         break
+      case "image" is among the lines of dropKeys
+         put the dragData ["image"] into imageContents
+         put "image" & CR & line 1 of imageContents
+         break
+      case droppedURL begins with "https://www.bbc.co.uk/iplayer/episode/"
+      case matchtext (droppedURL, "https://www.bbc.co.uk/iplayer/episode/(.+)")
+         drop_BBC droppedURL
+         break
+      case droppedURL begins with "https://www.youtube.com/watch?v="
+      case matchText (droppedURL, "https://www.youtube.com/watch?v=(.+)", tubeID)
+         drop_Youtube droppedURL
+         break
+      case matchText (droppedURL, "https://vimeo.com/(.+)", vimeoID)
+      case matchText (droppedURL, "https://vimeo.com/channels/staffpicks/(.+)", vimeoID)
+         drop_Vimeo vimeoID
+         break
+      case matchText (droppedHTML, wikiHtmlURlReg, wikiHtmlURl)
+         drop_WikiHtmlUrl wikiHtmlURl
+         break
+      default
+         -- do nothing
+         answer warning "I don't recognise this url!"
+         put droppedURL
+         break
+      default
+         put dropKeys
+   end switch
+end drop_Video
+
+command drop_Vimeo vimeoID
+   put vimeoID
+end drop_Vimeo
+
+command drop_Youtube youTubeURL
+   -- https://www.youtube.com/watch?v=BvDpNtbrr5Y
+   put youtube_ListFormats (youTubeURL) into availableFormats
+   switch
+      case availableFormats contains "webm"
+         youtube_DownloadVideo youTubeURL, "webm", true
+         break
+      case availableFormats contains "ogg"
+         youtube_DownloadVideo youTubeURL, "ogg", true
+         break
+      default
+         youtube_DownloadVideo youTubeUrl, "mp4", true
+   end switch   
+   put the result into videoFile
+   set the movie_File of me to videoFile
+   return videoFile
+end drop_Youtube
+
+command drop_WikiHtmlUrl wikiHtmlURl
+   --http://david.dojo.fed.wiki/today-i-write.html
+   
+   put "http://(.+)\/(.+)\.html" into someReg
+   if matchText (wikiHtmlURl, someReg, wikiDomain, pageSlug) is true then
+      put pageArray_Fetch (wikiDomain, pageSlug) into pageArray
+      --
+      put pageArray ["title"]
+      put pageArray ["story"] into storyArray
+      repeat with itemNum = 1 to item 2 of the extents of storyArray
+         put storyArray [itemNum]["type"] into itemType
+         switch itemType
+            case "video"
+            case "audio"
+               put storyArray [itemNum]["text"] into itemText
+               put line 1 of itemText into mediaLine
+               put mediaLine & CR after mediaLines
+               break
+            default
+               next repeat
+         end switch
+      end repeat
+      put mediaLines
+   else
+      return empty
+   end if
+end drop_WikiHtmlUrl
+
+command drop_BBC droppedURL
+   -- Horizon_2020_-_Pluto_Back_From_the_Dead_m000kqm9_original.mp4
+   
+   iplayer_DownloadVideo droppedURL
+   put the result into infoArray
+   --
+   display_Data infoArray
+   --
+   -- now add it to player
+   --
+   put iplayer_GetDownloadFolder() into iplayerFolder
+   finder_Reveal iplayerFolder
+end drop_BBC
+
+command drop_File
+   put line 1 of dragData ["files"] into videoFile
+   switch
+      case file_IsVideo (videoFile)
+         set the movie_File of me to videoFile
+         set the movie_Paused of me to false
+         break
+      case videoFile ends with ".m3u"
+         put url ("file:" & videoFile) into m3uPlayList
+         set the m3u_Text of me to m3uPlayList
+         break
+      default
+         put "Dropped file:" && videoFile
+   end switch
+end drop_File
+
+
+--> Geometry
+-
+on resizeControl
+   LayoutControl the rect of me
+   pass resizeControl
+end resizeControl
+
+setprop view_Rect someRect
+   -- here to force a redraw when rect has not changed
+   LayoutControl
+end view_Rect
+
+on LayoutControl pRect
+   if pRect is empty then put the rect of me into pRect
+   --
+   put the movie_Player of me into moviePlayer
+   put the menu_Button of me into mButton
+   put _BackgroundObject() into backgroundObject
+   put _BrowserObject() into browserObject
+   
+   lock screen
+   put the inner_Rect [pRect] of me into backgroundObjectRect
+   put the media_Rect [backgroundObjectRect] of moviePlayer into movieRect
+   if movieRect is empty then
+      -- in case library is not in use
+      put backgroundObjectRect into movieRect
+   end if
+   
+   set the rect of me to pRect -- in case it's locked
+   --
+   set the rect of moviePlayer to movieRect
+   set the rect of browserObject to movieRect
+   --
+   set the rect of mButton to backgroundObjectRect
+   set the rect of backgroundObject to backgroundObjectRect
+   unlock screen
+   
+   focus on moviePlayer
+end LayoutControl
+
+
+--> Browser
+-
+getprop browser_Html
+   put _BrowserObject() into bObject
+   put the htmltext of bObject into someHTML
+   return someHTML
+end browser_Html
+
+setprop browser_Html [dontShow] someHtml
+   put _BrowserObject() into bObject
+   lock screen
+   set the htmltext of bObject to someHTML
+   if dontShow is not true then
+      set the show_Browser of bObject to true
+   end if
+   unlock screen
+   return bObject
+end browser_Html
+
+getprop browser_URL
+   put _BrowserObject() into bObject
+   put the url of bObject into someURL
+   return someURL
+end browser_URL
+
+setprop browser_URL [dontShow] someURL
+   put _BrowserObject() into bObject
+   lock screen
+   set the url of bObject to someURL
+   if dontShow is not true then
+      set the show_Browser of bObject to true
+   end if
+   unlock screen
+   return bObject
+end browser_URL
+
+getprop show_Browser
+   put the visible of _BrowserObject() into isShowing
+   return isShowing
+end show_Browser
+
+setprop show_Browser isShowing
+   lock screen
+   set the visible of _BrowserObject() to (isShowing is true)
+   set the visible of _PlayerObject() to (isShowing is false)
+   unlock screen
+end show_Browser
+
+
+--> Events
+-
+on keyDown kName
+   switch kName
+      case "i"
+         put the movie_Seconds of me into mSeconds
+         set the clip_StartTime of me to mSeconds
+         break
+      case "o"
+         put the movie_Seconds of me into mSeconds
+         set the clip_EndTime of me to mSeconds
+         break
+      default
+         pass keyDown
+   end switch
+end keyDown
+
+on arrowkey pKey
+   put the long id of me into pObject
+   put the currenttime of pObject into sTime
+   put the timescale of pObject into oneSecond
+   --
+   switch
+      case the optionkey is "down"
+         put 2*oneSecond into oneSecond
+         break
+      case the commandkey is "down"
+         put 5*oneSecond into oneSecond
+         break
+   end switch
+   --
+   switch pKey
+      case "up"
+         put the clip_StartTime ["raw"] of me into sTime
+         if sTime > 0 then
+            set the currenttime of pObject to sTime
+         end if
+         break
+      case "down"
+         put the clip_EndTime ["raw"] of me into eTime
+         if eTime > 0 then
+            set the currenttime of pObject to eTime
+         end if
+         break
+      case "left"
+         if the optionKey is "down" then
+            put (sTime - oneSecond) into newTime
+         else
+            put (sTime - 1) into newTime
+         end if
+         set the currenttime of pObject to newTime
+         break
+      case "right"
+         if the optionKey is "down" then
+            put (sTime + oneSecond) into newTime
+         else
+            put (sTime + 1) into newTime
+         end if
+         set the currenttime of pObject to newTime
+         break
+      default
+         pass arrowkey
+   end switch
+end arrowkey
+
+on currentTimeChanged newTime
+   put the event_Message [newTime]  of me into messageName
+   if messageName is empty then pass currentTimeChanged
+   
+   set the movie_Paused of me to true
+   put messageName
+   do messageName
+end currentTimeChanged
+
+
+--> m3u
+-
 command m3u_Play m3uText
    if line 1 of m3uText is not "#EXTM3U" then return empty
    delete line 1 of m3uText
@@ -56,25 +424,9 @@ command m3u_Play m3uText
    end repeat
 end m3u_Play
 
-private command _DeconstructEXTINF extinfLine, @shortFile
-   -- #EXTINF:155,Lovelock robot talk.mp4
-   set the itemdelimiter to ":"
-   if item 1 of extinfLine is not "#EXTINF" then
-      breakpoint
-      return 0
-   end if
-   
-   get item 2 of extinfLine
-   set the itemdelimiter to comma
-   put item 1 of it into trackDuration -- track information: runtime in seconds and display title of the following resourc
-   put item 2 of it into shortFile
-   return trackDuration
-end _DeconstructEXTINF
 
--- getprop menu_Button
-return the long id of button "_Menu Button" of me
-end menu_Button
-
+--> Props
+-
 getprop m3u_Text
    put LocalArray ["m3u_Text"] into m3uText
    return m3uText
@@ -97,118 +449,6 @@ getprop melt_Array [shotcutCaption]
    put melt_ConstructArray (movieFile, inClipTime, outClipTime, shotcutCaption) into mltArray
    return mltArray
 end melt_Array
-
-
---> Events | Drag
--
-command drop_Video droppedURL
-   put _PlayerObject() into mPlayer
-   --
-   set the itemdelimiter to slash
-   switch
-      case droppedURL begins with "https://www.bbc.co.uk/iplayer/episode/"
-         -- case matchtext (droppedURL, "https://www.bbc.co.uk/iplayer/episode/(.+)")
-         iplayer_DownloadVideo droppedURL
-         
-         put iplayer_GetDownloadFolder() into iplayerFolder
-         finder_Reveal iplayerFolder
-         
-         -- Horizon_2020_-_Pluto_Back_From_the_Dead_m000kqm9_original.mp4
-         break
-      case droppedURL begins with "https://www.youtube.com/watch?v="
-      case matchText (droppedURL, "https://www.youtube.com/watch?v=(.+)", tubeID)
-         -- https://www.youtube.com/watch?v=BvDpNtbrr5Y
-         youtube_DownloadVideo droppedURL
-         put the result into videoFile
-         set the filename of mPlayer to videoFile
-         break
-      case matchText (droppedURL, "https://vimeo.com/(.+)", vimeoID)
-      case matchText (droppedURL, "https://vimeo.com/channels/staffpicks/(.+)", vimeoID)
-         put vimeoID
-         break
-      default
-         -- do nothing
-         answer warning "I don't recognise this url!"
-         put droppedURL
-   end switch
-end drop_Video
-
-private command _DroppedFile
-   put line 1 of dragData ["files"] into videoFile
-   switch
-      case file_IsVideo (videoFile)
-         set the movie_File of me to videoFile
-         set the movie_Paused of me to false
-         break
-      case videoFile ends with ".m3u"
-         put url ("file:" & videoFile) into m3uPlayList
-         set the m3u_Text of me to m3uPlayList
-         break
-      default
-         put videoFile & CR & dropKeys & CR&CR & someText
-   end switch
-end _DroppedFile
-
-on dragDrop
-   put the keys of the dragData into dropKeys
-   --
-   switch
-      case "Files" is among the lines of dropKeys
-         _DroppedFile
-         break
-      case "image" is among the lines of dropKeys
-         put the dragData ["image"] into imageContents
-         put "image" & CR & line 1 of imageContents
-         break
-      case "text" is among the lines of dropKeys
-         put the dragData ["text"] into droppedURL
-         drop_Video droppedURL
-         break
-      default
-         put dropKeys
-   end switch
-   
-   /*
-   put the dragdata ["text"] into droppedText
-   if word 1 of droppedText is "opnDrop" then
-      put the dragsource into targetObject
-      put the view_Object of targetObject into someView
-      if exists(someView) then
-         if the view_IsClass ["View|Movie|Controller"] of someView is true then
-            lcw_Notify "True"
-         else
-            lcw_Notify merge("Source [[the name of targetOject]] is not a movie controller!"), true
-         end if
-      else
-         lcw_Notify merge("Error: source [[the name of targetOject]] is not within a view!"), true
-      end if 
-   else
-      -- lcw_Notify (droppedText & CR & CR & the dragsource)
-   end if
-   */
-   pass dragDrop
-end dragDrop
-
-on dragEnter
-   set the allowableDragActions to "link"
-   set the dragAction to "Link"
-   pass dragEnter
-end dragEnter
-
-on keyDown kName
-   switch kName
-      case "i"
-         put the movie_Seconds of me into mSeconds
-         set the clip_StartTime of me to mSeconds
-         break
-      case "o"
-         put the movie_Seconds of me into mSeconds
-         set the clip_EndTime of me to mSeconds
-         break
-      default
-         pass keyDown
-   end switch
-end keyDown
 
 
 --> Movie | Time
@@ -341,59 +581,8 @@ getprop file_Head [pMbNum]
 end file_Head
 
 
---> Deps
+--> Events | Props
 -
-function time_HmsfToSeconds hmsf, pFramesPerSecond
-   if pFramesPerSecond is not a number then
-      put 25 into pFramesPerSecond
-   end if
-   
-   set the itemdelimiter to ":"
-   put item 1 of hmsf into someHours
-   put item 2 of hmsf into someMinutes
-   put item 3 of hmsf into someSeconds
-   put item 4 of hmsf into someFrames
-   
-   add someHours * 3600 to someSeconds
-   add someMinutes * 60 to someSeconds
-   add someFrames / pFramesPerSecond to someSeconds
-   
-   return someSeconds
-end time_HmsfToSeconds
-
-function time_SecondsToHMSF someSeconds, someFrames
-   put the numberformat into oFormat
-   set the numberformat to "##"
-   
-   put someSeconds div 3600 into someHours 
-   put someSeconds mod 3600 into secondsLeft
-   
-   put secondsLeft div 60 into someMinutes
-   put secondsLeft mod 60 into secondsLeft
-   
-   put trunc(secondsLeft) into someSeconds
-   put secondsLeft - someSeconds into someFraction
-   
-   if someFrames is empty then put round(someFraction * 25) into someFrames
-   add 0 to someFrames
-   
-   get someHours & ":" & someMinutes  & ":" & someSeconds  & ":" & someFrames
-   set the numberformat to oFormat
-   return it
-end time_SecondsToHMSF
-
-
---> Events
--
-on currentTimeChanged newTime
-   put the event_Message [newTime]  of me into messageName
-   if messageName is empty then pass currentTimeChanged
-   
-   set the movie_Paused of me to true
-   put messageName
-   do messageName
-end currentTimeChanged
-
 getprop event_Array [newTime]
    put LocalArray ["events"] into eventArray
    if newTime is empty then return eventArray
@@ -441,7 +630,7 @@ getprop movie_File
    return mFile
 end movie_File
 
-setprop movie_File someFile
+setprop movie_File [dontShow] someFile
    put the movie_View of the target into movieView
    if exists(movieView) is false then return empty
    
@@ -464,10 +653,11 @@ setprop movie_File someFile
       set the filename of moviePlayer to empty
    end if
    set the filename of moviePlayer to someFile
-   
-   -- movie_ResetInfo movieView
-   -- set the view_Rect of movieView to oRect
    LayoutControl oRect
+   --
+   if dontShow is not false then
+      set the show_Browser of me to false
+   end if
    --
    focus on moviePlayer
    unlock screen
@@ -734,6 +924,10 @@ end playPaused
 
 --> Objects
 -
+-- getprop menu_Button
+return the long id of button "_Menu Button" of me
+end menu_Button
+
 getprop movie_View
    return the long id of me
 end movie_View
@@ -746,9 +940,18 @@ getprop movie_Player
    return _PlayerObject()
 end movie_Player
 
-getprop view_Background
+
+--> Private | Objects
+-
+private function _BackgroundObject
+   -- could be a graphic?
    return the long id of control "_View Background" of me
-end view_Background
+end _BackgroundObject
+
+private function _BrowserObject
+   put the long id of widget "_Movie Browser" of me into mBrowser
+   return mBrowser
+end _BrowserObject
 
 private function _PlayerObject
    put the long id of player 1 of me into mPlayer
@@ -756,53 +959,23 @@ private function _PlayerObject
 end _PlayerObject
 
 
---> Object | Links
+--> Private
 -
-getprop metadata_View
-   put "View|Movie|Note" into viewPath
-   return view_GetTemplateObject (viewPath)
-end metadata_View
-
-
---> Geometry
--
-on resizeControl
-   LayoutControl the rect of me
-   pass resizeControl
-end resizeControl
-
-setprop view_Rect someRect
-   -- here to force a redraw when rect has not changed
-   LayoutControl
-end view_Rect
-
-on LayoutControl pRect
-   if pRect is empty then put the rect of me into pRect
-   put the movie_Player of me into moviePlayer
-   put the menu_Button of me into mButton
-   put the view_Background of me into backgroundObject
-   
-   lock screen
-   put the inner_Rect [pRect] of me into backgroundObjectRect
-   put the media_Rect [backgroundObjectRect] of moviePlayer into movieRect
-   if movieRect is empty then
-      -- in case library is not in use
-      put backgroundObjectRect into movieRect
+private command _DeconstructEXTINF extinfLine, @shortFile
+   -- #EXTINF:155,Lovelock robot talk.mp4
+   set the itemdelimiter to ":"
+   if item 1 of extinfLine is not "#EXTINF" then
+      breakpoint
+      return 0
    end if
    
-   set the rect of me to pRect
-   set the rect of moviePlayer to movieRect
-   set the rect of backgroundObject to backgroundObjectRect
-   set the rect of mButton to movieRect
-   unlock screen
-   
-   focus on moviePlayer
-   set the uOPN ["movie_Size"] of me to "resize"
-end LayoutControl
+   get item 2 of extinfLine
+   set the itemdelimiter to comma
+   put item 1 of it into trackDuration -- track information: runtime in seconds and display title of the following resourc
+   put item 2 of it into shortFile
+   return trackDuration
+end _DeconstructEXTINF
 
-
---> Deps
--
 function file_IsVideo someFile, quickSearch, beAggressive
    set the itemdelimiter to "."
    if the platform = "MacOS" then
@@ -823,3 +996,42 @@ function file_IsVideo someFile, quickSearch, beAggressive
       return false
    end if
 end file_IsVideo
+
+function time_HmsfToSeconds hmsf, pFramesPerSecond
+   if pFramesPerSecond is not a number then
+      put 25 into pFramesPerSecond
+   end if
+   
+   set the itemdelimiter to ":"
+   put item 1 of hmsf into someHours
+   put item 2 of hmsf into someMinutes
+   put item 3 of hmsf into someSeconds
+   put item 4 of hmsf into someFrames
+   
+   add someHours * 3600 to someSeconds
+   add someMinutes * 60 to someSeconds
+   add someFrames / pFramesPerSecond to someSeconds
+   
+   return someSeconds
+end time_HmsfToSeconds
+
+function time_SecondsToHMSF someSeconds, someFrames
+   put the numberformat into oFormat
+   set the numberformat to "##"
+   
+   put someSeconds div 3600 into someHours 
+   put someSeconds mod 3600 into secondsLeft
+   
+   put secondsLeft div 60 into someMinutes
+   put secondsLeft mod 60 into secondsLeft
+   
+   put trunc(secondsLeft) into someSeconds
+   put secondsLeft - someSeconds into someFraction
+   
+   if someFrames is empty then put round(someFraction * 25) into someFrames
+   add 0 to someFrames
+   
+   get someHours & ":" & someMinutes  & ":" & someSeconds  & ":" & someFrames
+   set the numberformat to oFormat
+   return it
+end time_SecondsToHMSF

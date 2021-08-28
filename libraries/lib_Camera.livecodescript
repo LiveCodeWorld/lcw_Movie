@@ -12,40 +12,14 @@ version: 0.1
 
 --> Working on
 -
-command atopia_UploadRecording mFilePath, pTitle, pDescription
-   -- let's save to wiki
-   put "vlog.mediagarden.org" into vlogDomain
+command display_CameraRecordings
+   put camera_ListLocalRecordings() into recordingFiles
    --
-   atopia_UploadAsset vlogDomain, mFilePath
-   put the result into pathToStore
-   if pathToStore is empty then
-      return ("Error, failed to upload video -" && mFilePath)
-   end if
-   
-   if pTitle is empty then
-      return empty
-   else
-      put empty into forkDomains
-      put pageArray_FetchTemplate (vlogDomain, "Recording Template", pTitle, forkDomains) into pageArray
-      --
-      if pDescription is not empty then
-         put pDescription into pageArray ["story"][1]["text"]
-      end if
-      --
-      set the itemdelimiter to slash
-      put item -1 of pathToStore into shortFile
-      put fedwiki_ConstructAssetUrl (shortFile, vlogDomain) into recordingURL
-      --
-      put fedwiki_ConstructVideoItemText ("HTML5 mp4", recordingURL, pDescription) into itemText
-      pageArray_SetFirstItem pageArray, "video", itemText
-      --
-      put fedwiki_ConstructSlug (pTitle) into pageSlug
-      --
-      pageArray_Store vlogDomain, pageSlug, pageArray
-      put the result into wikiURL
-      return wikiURL
-   end if
-end atopia_UploadRecording
+   display_Data recordingFiles, "Local", "Recordings"
+   put the result into displayView
+   display_SetInteractions displayView, "Camera | Recording", "mDoubleUp_Recording"
+   return displayView
+end display_CameraRecordings
 
 
 --> Camera | Close
@@ -168,7 +142,3 @@ command camera_SetRecordingFolder pFolder
    pref_SetValue "Camera Recording Folder", pFolder
    return pFolder
 end camera_SetRecordingFolder
-
-
---> Deps
--

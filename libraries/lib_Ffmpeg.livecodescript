@@ -80,9 +80,7 @@ end time_SecondsToHMSF
 command edl_ExportClip someVideoFile, sSeconds, eSeconds, pExportFilePath
    ffmpeg_SplitVideo someVideoFile, sSeconds, eSeconds, pExportFilePath
    put the result into shellResult
-   --
-   display_Video pExportFilePath
-   return pExportFilePath
+   return shellResult
 end edl_ExportClip
 
 function edl_ConvertToMovieSeconds hmsfTimeWithHourStart, pAddFrames, pFPS
@@ -210,6 +208,27 @@ end mplayer_RootPath
 
 --> Deps
 -
+command shell_BashParamEscape @someParam
+   put word 1 to -1 of someParam into someParam
+   if text_IsQuoted(someParam) is false then
+      repeat for each char someChar in " |()"
+         replace someChar with ("\" & someChar) in someParam
+      end repeat
+   end if
+end shell_BashParamEscape
+
+function text_IsQuoted someText, pString
+   local quotedText
+   put "['" & quote & "]" into someQuote
+   if pString is empty then
+      put "(?m)" & someQuote & "(.*)" & someQuote into someReg
+   else
+      put "(?m)" & someQuote & "(.*" & pString & ".*)" & someQuote into someReg
+   end if
+   put matchtext (someText, someReg, quotedText) into someBoolean
+   return someBoolean
+end text_IsQuoted
+
 command shell_BashParamEscape @someParam
    put word 1 to -1 of someParam into someParam
    if text_IsQuoted(someParam) is false then

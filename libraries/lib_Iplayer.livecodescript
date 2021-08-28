@@ -10,8 +10,66 @@ version: 0.1
 /*Some help*/
 
 
+--> Display
+-
+command ask_DisplayIplayerSeries
+   put ask_Question ("Waht series would you like to display?", "p093wp6h", "Search iPlayer") into pID
+   display_IplayerSeries pID
+   return the result
+end ask_DisplayIplayerSeries
+
+command display_IplayerSeries sID
+   get iplayer_ListSeries (sID)
+   
+   set the itemdelimiter to " - "
+   put item 1 of line 1 of it into seriesName
+   repeat for each line sLine in it
+      set the itemdelimiter to comma
+      put item -1 of sLine into episodeID
+      --
+      get item 1 of sLine
+      set the itemdelimiter to " - "
+      put item 3 of it into eName
+      --
+      put episodeID into eArray [eName]["episodeID"]
+   end repeat
+   --
+   display_Data eArray, seriesName, "iPlayer"
+   put the result into displayView
+   set the tool_Menus of displayView to "iPlayer"
+   set the displayed_ProgramID of displayView to sID
+   return displayView
+end display_IplayerSeries
+
+on mDoubleUp_iPlayer displayView, someLine
+   breakpoint
+   put the title_Text of displayView into someTitle
+end mDoubleUp_iPlayer
+
+
 --> Working on
 -
+command iplayer_DownloadSeries sID
+   put merge ("get_iplayer --pid=[[sID]] --pid-recursive") into someShell
+   put shell (someShell) into shellResult
+   -- 
+   put shellResult
+end iplayer_DownloadSeries
+
+function iplayer_ListSeries pID
+   put merge ("get_iplayer --pid=[[pID]] --pid-recursive-list") into someShell
+   put shell (someShell) into shellResult
+   --
+   put lineOffset ("Episodes:", shellResult ) into lineNum
+   delete line 1 to lineNum of shellResult
+   set the itemdelimiter to ":"
+   if item 1 of line -1 of shellResult = "INFO" then
+      delete line -1 of shellResult
+   end if
+   --
+   return word 1 to -1 of shellResult
+end iplayer_ListSeries
+
 command iplayer_DownloadVideo droppedURL
    /*
    get_iplayer --get "Top Gear" --type=tv --channel="BBC Two" --file-prefix="<nameshort><-senum><-episodeshort>" --output "/media/TV Shows 1/2 - TV Shows/Top Gear/Season 19"
@@ -24,8 +82,7 @@ command iplayer_DownloadVideo droppedURL
    put item 7 of droppedURL into programBit
    --
    set the cursor to watch
-   --
-   put "get_iplayer" && kwote (droppedURL) into someShell 
+   put "get_iplayer --force" && kwote (droppedURL) into someShell 
    put shell (someShell) into shellResult
    --
    put _ParseDownloadResult (shellResult) into resultArray
@@ -36,6 +93,21 @@ command iplayer_DownloadVideo droppedURL
    return infoArray
 end iplayer_DownloadVideo shellResult
 
+command iplayer_Download programID
+   set the cursor to watch
+   put "get_iplayer --pid=" & word 1 to -1 of programID into someShell 
+   put shell (someShell) into shellResult
+   --
+   /*
+   put _ParseDownloadResult (shellResult) into resultArray
+   put resultArray ["episodeTitle"] into episodeTitle
+   put item 2 of episodeTitle into programID
+   */
+   
+   put iplayer_GetInfo (programID) into infoArray
+   return infoArray
+end iplayer_Download
+
 function iplayer_GetInfo programID
    -- m000kxl0
    put "get_iplayer --info --pid=" & programID into someShell
@@ -44,6 +116,15 @@ function iplayer_GetInfo programID
    put _ParseInfoResult (shellResult) into infoArray
    return infoArray
 end iplayer_GetInfo
+
+command iplayer_SetDefaultOutupFolder sFolder
+   -- Change your default output directory:
+   
+   -- "/home/user/get_iplayer"
+   put "get_iplayer --prefs-add --output=" & kwote (sFolder) into someShell
+   put shell (someShell) into shellResult
+   return shellResult
+end iplayer_SetDefaultOutupFolder
 
 function iplayer_GetDownloadFolder
    -- /Users/fortyfoxes/Movies/iPlayer Downloads

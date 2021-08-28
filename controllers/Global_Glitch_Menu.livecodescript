@@ -27,6 +27,10 @@ getprop menu_Target [cardObject]
    return playerObject
 end menu_Target
 
+getprop uploadToWiki_Params
+   return "conversation.wiki,permanent.wiki,-,vlog.mediagarden.org"
+end uploadToWiki_Params
+
 
 --> Global | Glitch | Menu
 -
@@ -49,6 +53,48 @@ end submenu_Movie
 on _
 end _
 
+on menu_RenameFile playerObject
+   put the movie_File of playerObject into mFile
+   set the itemdelimiter to slash
+   put item -1 of mFile into shortFile
+   --
+   put lcw_Ask ("Rename movie file...", shortFile, playerObject) into newShortFile
+   if newShortFile is empty then exit to top
+   --
+   put mFile into newPath
+   put newShortFile into item -1 of newPath
+   rename file mFile to newPath
+   --
+   set the movie_File of playerObject to newPath
+end menu_RenameFile
+
+on menu_UploadToWiki playerObject, wikiDomain
+   put the movie_File of playerObject into mFile
+   if mFile is empty then
+      lcw_AnswerWarning "Player has no file!", playerObject
+   end if
+   --
+   put "Test Movie Upload" into mTitle
+   put "Just testing uploading a movie with Livecode" into mDescription
+   
+   atopia_UploadRecording mFile, mTitle, mDescription, wikiDomain
+   --
+   if the result is empty then
+      answer "Uploaded asset!"
+   else
+      put the result
+      answer "Failed to upload file :("
+   end if
+end menu_UploadToWiki
+
+on menu_Reveal playerObject
+   put the movie_File of playerObject into mFile
+   finder_Reveal mFile
+end menu_Reveal
+
+on _
+end _
+
 on submenu_Dev
    return "Dev | Menu"
 end submenu_Dev
@@ -56,6 +102,32 @@ end submenu_Dev
 
 --> Dev | Menu
 -
+on menu_YoutubeDownloadConfig
+   folder_CreateNested "~/.config/youtube-dl/"
+   folder_CreateNested "~/Movies/Youtube/"
+   --
+   put "~/.config/youtube-dl/config" into cFile
+   if there is not a file cFile then
+      put "# Lines starting with # are comments" into defaultConfig
+      put CR&CR & "# Remove spaces and funny chars from filename" after defaultConfig
+      put CR & "--restrict-filenames" after defaultConfig
+      put CR&CR & "# Save all videos under Movies directory in your home directory" after defaultConfig
+      put CR & "-o ~/Movies/Youtube/%(title)s-%(id)s.%(ext)s" after defaultConfig
+      --
+      put defaultConfig into url ("file:" & cFile)
+   end if
+   --
+   atom_Edit cFile
+end menu_YoutubeDownloadConfig
+
+on menu_IgnoreOverdueIplayer
+   put "get_iplayer --prefs-add --no-purge" into someShell
+   put shell (someShell)
+end menu_IgnoreOverdueIplayer
+
+on _
+end _
+
 on menu_EditBehavior playerObject
    put the behavior of playerObject into bObject
    edit the script of bObject

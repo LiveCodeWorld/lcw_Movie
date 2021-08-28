@@ -26,35 +26,9 @@ getprop menu_Target [tObject]
    return cameraView
 end menu_Target
 
-getprop menu_CheckTarget [mTarget]
-   -- use to do initialisation
-   pass menu_CheckTarget
-end menu_CheckTarget
-
 command mDouble_UploadRecording
    put the params
 end mDouble_UploadRecording
-
-command cameraView_AskUploadRecording mFilePath, cameraView
-   if there is not a file mFilePath then
-      put "Error, file does not exits!" && mFilePath into someComment
-      return someComment
-   end if
-   set the itemdelimiter to slash
-   put item -1 of mFilePath into shortFile
-   --
-   put lcw_Ask ("Choose a title for a wiki page for this recording...", shortFile) into pTitle
-   put lcw_Ask ("Describe this recording...", empty) into pDescription
-   --
-   atopia_UploadRecording mFilePath, pTitle, pDescription
-   --
-   put the result into wikiURL
-   if theResult is empty then
-      answer "Failed to upload file :("
-   else
-      launch url wikiURL
-   end if
-end cameraView_AskUploadRecording
 
 command _AnswerResult theResult
    if theResult is empty then
@@ -97,9 +71,23 @@ getprop disabled_StopRecording [cameraView]
    end if
 end disabled_StopRecording
 
+on mDoubleUp_Recording fldObject, shortFile
+   put camera_LocalRecordingPath (shortFile, true) into mFilePath
+   --
+   put spotlight_ListMovieInfo (mFilePath)
+   finder_Reveal mFilePath
+end mDoubleUp_Recording
+
 
 --> Global | Camera | Recording | Menu
 -
+on menu_DisplayRecordings
+   display_CameraRecordings
+end menu_DisplayRecordings
+
+on _
+end _
+
 on menu_StartRecording cameraView
    put the stack_Label of cameraView into sLabel
    if sLabel is empty then
@@ -131,36 +119,13 @@ on menu_StopRecording cameraView
    put the recording_Path of cameraView into mFilePath
    --
    set the recording_Path of cameraView to empty
-   cameraView_AskUploadRecording mFilePath, cameraView
-   put the result into someError
-   --
-   if item 1 of someError is "error" then
-      lcw_Answer someError, cameraView
-   else
-   end if
+   -- 
+   display_CameraRecordings
 end menu_StopRecording
 
 on _
 end _
 
-on submenu_Recordings
-   return "Recordings | Menu"
-end submenu_Recordings
-
-on submenu_Dev
-   return "Dev | Menu"
-end submenu_Dev
-
-
---> Dev | Menu
--
-on menu_Experiment displayView
-   put displayView
-end menu_Experiment
-
-
---> Recordings | Menu
--
 on menu_RecordingMetadata cameraView, shortFile
    put camera_LocalRecordingPath (shortFile, true) into movieFile
    --
@@ -181,9 +146,54 @@ end menu_DeleteLocalRecording
 on menu_UploadRecording cameraView, shortFile
    put camera_LocalRecordingPath (shortFile, true) into mFilePath
    --
-   cameraView_AskUploadRecording mFilePath, cameraView
+   set the itemdelimiter to slash
+   put item -1 of mFilePath into shortFile
+   put lcw_Ask ("Choose a title for a wiki page for this recording...", shortFile) into pTitle
+   put lcw_Ask ("Describe this recording...", empty) into pDescription
+   --
+   atopia_UploadRecording mFilePath, pTitle, pDescription
+   --
+   put the result into wikiURL
+   if theResult is empty then
+      answer "Failed to upload file :("
+   else
+      launch url wikiURL
+   end if
 end menu_UploadRecording
 
 on menu_RevealRecording cameraView
    camera_RevealRecording cameraView
 end menu_RevealRecording
+
+on _
+end _
+
+on submenu_Dev
+   return "Dev | Menu"
+end submenu_Dev
+
+
+--> Dev | Menu
+-
+on menu_Refresh displayView
+   put camera_ListLocalRecordings() into recordingFiles
+   put recordingFiles into LocalArray ["recordingFiles"]
+   --
+   set the displayed_Index of displayView to recordingFiles
+end menu_Refresh
+
+on _
+end _
+
+on menu_TestOpenProcess displayView
+   /*
+   put the selected_Line of displayView into shortFile
+   put camera_LocalRecordingPath (shortFile, true) into localFile
+   set the itemdelimiter to slash
+   put localFile into rFolder
+   put slash into item -1 of rFolder
+   --
+   */
+   put camera_GetRecordingFolder() into rFolder
+   rsync_OpenProcess rFolder, "david.obeya.xyz"
+end menu_TestOpenProcess
