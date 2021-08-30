@@ -97,6 +97,10 @@ on submenu_Vlc
    return "Global | VLC | Menu"
 end submenu_Vlc
 
+on submenu_Iplayer
+   return "Global | iPlayer | Menu"
+end submenu_Iplayer
+
 on menu_DownloadYoutube mPlayer
    put lcw_Ask ("Enter a Youtube url...", "https://www.youtube.com/watch?v=AGNNBoCjIP8") into youtubeUrl
    youtube_DownloadVideo youtubeUrl

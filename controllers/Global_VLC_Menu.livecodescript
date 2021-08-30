@@ -38,43 +38,79 @@ command socketFinishedWriting pSocketID
    close socket pSocketID
 end socketFinishedWriting
 
+getprop checked_FullScreen
+   put the vlc_StatusArray of stack "Fun" into statusArray
+   return statusArray ["fullscreen"] is true
+end checked_FullScreen
+
 
 --> Global | VLC | Menu
 -
-on menu_ShellPause
+on menu_SearchIplayer
+   put the vlc_StatusArray of stack "Fun" into statusArray
+   put statusArray ["information"]["category"]["meta"]["filename"] into shortFile
+   put statusArray ["information"]["category"]["meta"]["Writer"] into sWriter
+   put statusArray ["information"]["category"]["meta"]["title"] into sTitle
+end menu_SearchIplayer
+
+on menu_FullScreen
+   get the vlc_ToggleFullScreen of stack "Fun"
+end menu_FullScreen
+
+on menu_SearchTv
+   ask_SearchMovieDB tv
+end menu_SearchTv
+
+on menu_Docummentation
+   launch url "http://livecode.world/view/welcome-visitors/view/vlc"
+end menu_Docummentation
+
+on menu_LaunchInterface
+   put the name of stack "Fun" into mObject
+   --
+   put the vlc_IP of mObject into someIP
+   put the vlc_Port of mObject into somePort
+   --
+   put merge ("http://[[someIP]]:[[somePort]]") into someURL
+   -- put "http://127.0.0.1:8080" into someURL
+   --
+   launch url someURL
+end menu_LaunchInterface
+
+on menu_DisplayStatus
+   display_VlcStatus "Fun"
+end menu_DisplayStatus
+
+on menu_DisplayPlayList
+   display_VlcPlayList "Fun"
+end menu_DisplayPlayList
+
+on menu_DisplayBrowseArray
+   display_VlcBrowseArray "Fun"
+end menu_DisplayBrowseArray
+
+on _
+end _
+
+on menu_StreamDeckPage displayView
+   open datagram socket to "127.0.0.1:51235"
+   write "PAGE-SET 1 BL15K1B43145" to socket "127.0.0.1:51235" with message "socketFinishedWriting"
+end menu_StreamDeckPage
+
+on menu_StreamDeckBankPress displayView
+   open datagram socket to "127.0.0.1:51235"
+   write "BANK-PRESS 1 11" to socket "127.0.0.1:51235" with message "socketFinishedWriting"
+end menu_StreamDeckBankPress
+
+
+--> Dev | Menu
+-
+on _ShellPause
    put "" into uName
    put "b05m3g" into pWord
    put "pl_pause" into sCommand
    --
    get merge ("curl -s -u :[[pWord]] 'http://127.0.0.1:8080/requests/status.xml?command=[[sCommand]]'")
    put shell (it) into shellResult
-end menu_ShellPause
+end _ShellPause
 
-on menu_RestPause
-   vlc_Pause
-   
-   /*
-   put "" into uName
-   put "b05m3g" into pWord
-   put "pl_pause" into sCommand
-   --
-   put merge ("http://127.0.0.1:8080/requests/status.xml?command=pl_pause") into vlcURL
-   --
-   http_SetBasicAuthentication uName, pWord
-   get url vlcURL
-   -- put libURLLastHTTPHeaders() & CR&CR & libURLLastRHHeaders()
-   */
-end menu_RestPause
-
-on _
-end _
-
-on menu_SetPage displayView
-   open datagram socket to "127.0.0.1:51235"
-   write "PAGE-SET 1 BL15K1B43145" to socket "127.0.0.1:51235" with message "socketFinishedWriting"
-end menu_SetPage
-
-on menu_BankPress displayView
-   open datagram socket to "127.0.0.1:51235"
-   write "BANK-PRESS 1 11" to socket "127.0.0.1:51235" with message "socketFinishedWriting"
-end menu_BankPress

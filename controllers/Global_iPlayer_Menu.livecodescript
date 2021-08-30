@@ -18,13 +18,25 @@ local LocalArray
 --> Menu | Props
 -
 getprop menu_Target [tObject]
-   -- called once for each menu
    return the display_View of tObject
 end menu_Target
+
+getprop disabled_Download [displayView]
+   put the displayed_ProgramID of displayView into sID
+   return sID is empty
+end disabled_Download
 
 
 --> Global | iPlayer | Menu
 -
+on menu_SearchIplayer
+   put ask_Question ("What would uyou like to search for?", "Prime Minister's Questions", "Search BBC  iPlayer") into sTerm
+   --
+   put iplayer_Search (sTerm) into foundIndex
+   --
+   display_Data foundIndex, sTerm, "iPLayer"
+end menu_SearchIplayer
+
 on menu_Download displayView
    put the displayed_ProgramID of displayView into sID
    --
@@ -33,10 +45,6 @@ end menu_Download
 
 on _
 end _
-
-on submenu_Iplayer
-   return "Global | iPlayer | Menu"
-end submenu_Iplayer
 
 on submenu_Dev
    return "Dev | Menu"

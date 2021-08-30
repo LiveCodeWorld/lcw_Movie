@@ -64,11 +64,6 @@ getprop shape_Params
    return "rectangle,roundrect,oval,-,hexagon,pentagon,triangle"
 end shape_Params
 
-getprop disabled_CloseCamera [cameraView]
-   put the camera_Name of cameraView is not empty into isVisible
-   return isVisible is false
-end disabled_CloseCamera
-
 getprop stackStyle_Param [cameraView]
    put the stack_Style of cameraView into sStyle
    return sStyle
@@ -95,7 +90,7 @@ on submenu_Record
 end submenu_Record
 
 on submenu_Close
-   return "Camera | Close | Menu"
+   return "Global | Camera | Close | Menu"
 end submenu_Close
 
 on _
@@ -113,58 +108,33 @@ on menu_StackStyle cameraView, sStyle
    set the stack_Style of cameraView to sStyle
 end menu_StackStyle
 
-on _
-end _
+on menu_DeleteAllCameras cameraView
+   dispatch "camera_DeleteAll" to cameraView
+end menu_DeleteAllCameras
 
 on submenu_Dev
    return "Dev | Menu"
 end submenu_Dev
 
 
---> Camera | Close | Menu
--
-on menu_CloseCamera cameraView
-   set the camera_Name of cameraView to empty
-end menu_CloseCamera
-
-on menu_CloseAllCameras
-   camera_CloseAll
-end menu_CloseAllCameras
-
-on menu_ReopenCameras
-   camera_ReOpenAll
-end menu_ReopenCameras
-
-on _
-end _
-
-on menu_CloseStack  cameraView
-   set the camera_Name of cameraView to empty
-   put the stack_Name of cameraView into stackName
-   --
-   put "delete stack" & kwote (stackName) into pigeon
-   send pigeon to cameraView in 2 ticks
-end menu_CloseStack
-
-
 --> Dev | Menu
 -
-on menu_TestClone cameraView, deviceName
+on _TestClone cameraView, deviceName
    put the camera_DeviceNames of cameraView
    --
    display_Camera deviceName
-end menu_TestClone
+end _TestClone
 
-on menu_Shape cameraView, gShape
+on _Shape cameraView, gShape
    set the graphic_Shape of cameraView to gShape
-end menu_Shape
+end _Shape
 
-on menu_EditBehavior cameraView
+on _EditBehavior cameraView
    put the behavior of cameraView into bObject
    edit the script of bObject
-end menu_EditBehavior
+end _EditBehavior
 
-on menu_PresentationMode cameraView
+on _PresentationMode cameraView
    put camera_ListStackNames() into sNames
    put camera_CheckAllFrameless (sNames) is false into toggleBoolean
    --
@@ -181,21 +151,21 @@ on menu_PresentationMode cameraView
       set the systemwindow of stack sName to toggleBoolean
       set the shadow of stack sName to (not toggleBoolean)
    end repeat
-end menu_PresentationMode
+end _PresentationMode
 
 on _
 end _
 
-on menu_DisplayPageTitleArray
+on _DisplayPageTitleArray
    display_PageTitleArray "vlog.mediagarden.org"
    put the result into displayView
    return displayView
-end menu_DisplayPageTitleArray
+end _DisplayPageTitleArray
 
 on _
 end _
 
-on menu_StackColour cameraView, colourChoice
+on _StackColour cameraView, colourChoice
    put the stack_Name of cameraView into stackName
    --
    switch colourChoice
@@ -211,24 +181,20 @@ on menu_StackColour cameraView, colourChoice
       default
          set the backgroundcolor of stack stackName to colourChoice
    end switch
-end menu_StackColour
+end _StackColour
 
 on _
 end _
 
-on menu_OpenCamera cameraView
+on _OpenCamera cameraView
    put the stack_Name of cameraView into cameraName
    set the camera_Name of cameraView to cameraName
-end menu_OpenCamera
+end _OpenCamera
 
-on menu_Mask cameraView
+on _Mask cameraView
    put the snap_Mask of cameraView into someBoolean
    set the snap_Mask ["blendDstIn"] of cameraView to (not someBoolean)
-end menu_Mask
-
-on menu_DeleteAllCameras cameraView
-   dispatch "camera_DeleteAll" to cameraView
-end menu_DeleteAllCameras
+end _Mask
 
 getprop checked_Mask [cameraView]
    put the snap_Mask of cameraView into someBoolean

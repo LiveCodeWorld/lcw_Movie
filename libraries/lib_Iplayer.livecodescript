@@ -49,6 +49,19 @@ end mDoubleUp_iPlayer
 
 --> Working on
 -
+function iplayer_ListHistory
+   put shell ("get_iplayer --history '.*'") into shellResult
+   put lineoffset ("Matches:", shellResult) into lineNum
+   put line (lineNum + 1) to -2 of shellResult into hIndex
+   return hIndex
+end iplayer_ListHistory
+
+function iplayer_Search sTerm
+   put "get_iplayer" && kwote (sTerm) into someShell
+   put shell (someShell) into shellResult
+   return shellResult
+end iplayer_Search
+
 command iplayer_DownloadSeries sID
    put merge ("get_iplayer --pid=[[sID]] --pid-recursive") into someShell
    put shell (someShell) into shellResult
@@ -82,7 +95,7 @@ command iplayer_DownloadVideo droppedURL
    put item 7 of droppedURL into programBit
    --
    set the cursor to watch
-   put "get_iplayer --force" && kwote (droppedURL) into someShell 
+   put "get_iplayer --subtitles --force" && kwote (droppedURL) into someShell 
    put shell (someShell) into shellResult
    --
    put _ParseDownloadResult (shellResult) into resultArray
@@ -93,17 +106,26 @@ command iplayer_DownloadVideo droppedURL
    return infoArray
 end iplayer_DownloadVideo shellResult
 
-command iplayer_Download programID
+command iplayer_DownloadSubtitles programID, pRaw
+   if pRaw is true then
+      put "get_iplayer --subtitles-only --subsraw --overwrite" into someShell
+   else
+      put "get_iplayer --subtitles-only" into someShell
+   end if
+   put space & "--pid=" & word 1 to -1 of programID after someShell 
+   put shell (someShell) into shellResult
+   return shellResult
+end iplayer_DownloadSubtitles
+
+command iplayer_Download programID, pWithSub
    set the cursor to watch
-   put "get_iplayer --pid=" & word 1 to -1 of programID into someShell 
+   put "get_iplayer" into someShell
+   if pWithSub is true then
+      put space & "--subtitles" after someShell
+   end if
+   put space & "--pid=" & word 1 to -1 of programID after someShell 
    put shell (someShell) into shellResult
    --
-   /*
-   put _ParseDownloadResult (shellResult) into resultArray
-   put resultArray ["episodeTitle"] into episodeTitle
-   put item 2 of episodeTitle into programID
-   */
-   
    put iplayer_GetInfo (programID) into infoArray
    return infoArray
 end iplayer_Download
@@ -256,7 +278,6 @@ private function _ParseInfoResult shellResult
    
    put _ParseShellResult(shellResult) into resultArray
    --
-   display_Data resultArray, "_ParseInfoResult"
    return resultArray
 end _ParseInfoResult
 
