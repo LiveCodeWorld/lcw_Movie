@@ -39,6 +39,8 @@ command socketFinishedWriting pSocketID
 end socketFinishedWriting
 
 getprop checked_FullScreen
+   if exists (stack "Fun") is false then return false
+   --
    put the vlc_StatusArray of stack "Fun" into statusArray
    return statusArray ["fullscreen"] is true
 end checked_FullScreen

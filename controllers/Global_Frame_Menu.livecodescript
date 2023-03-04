@@ -1,7 +1,7 @@
 ﻿script "Global | Frame | Menu"
 --> MetaData
 -
-copyright: Anonymous
+copyright: David Bovill
 license: GPLv3
 name: Global | Frame | Menu
 type: controller
@@ -31,14 +31,24 @@ getprop menu_CheckTarget [browserView]
    return exists (browserView)
 end menu_CheckTarget
 
-getprop frame_Param [someView]
+getprop stackStyle_Param [cameraView]
+   put the stack_Style of cameraView into sStyle
+   return sStyle
+end stackStyle_Param
+
+getprop stackStyle_Params [cameraView]
+   put the stack_Styles of cameraView into sStyles
+   return sStyles
+end stackStyle_Params
+
+getprop window_Param [someView]
    put the stack_Frame of someView into stackFrame
    return stackFrame
-end frame_Param
+end window_Param
 
-getprop frame_Params
+getprop window_Params
    return "frameless,palette,toplevel"
-end frame_Params
+end window_Params
 
 getprop checked_PresentationMode
    put camera_ListStackNames() into sNames
@@ -51,76 +61,13 @@ getprop checked_SystemWindow [someView]
    return someBoolean
 end checked_SystemWindow
 
-
---> Global | Frame | Menu
--
-on menu_Clone someView
-   put the stack_Label of someView into stackName
-   if cameraName is empty then put the stack_Name of someView into stackName
-   put lcw_Ask ("Give the new camera a name...", stackName) into newStackName
-   --
-   put the stack_Name of someView into stackNameToClone
-   stack_Clone stackNameToClone, newStackName
-   put the result into clonedStack
-end menu_Clone
-
-on _
-end _
-
-on menu_Frame someView, frameStyle
-   set the stack_Frame of someView to frameStyle
-end menu_Frame
-
-on menu_SystemWindow someView
-   put the system_Window of someView into someBoolean
-   set the system_Window of someView to (not someBoolean)
-end menu_SystemWindow
-
-on menu_EditLabel someView
-   put the stack_Label of someView into oldLabel
-   --
-   put lcw_Ask ("Edit the lable of this camera view...", oldLabel) into newLabel
-   --
-   set the stack_Label of someView to newLabel
-end menu_EditLabel
-
-on _
-end _
-
-on menu_Close someView
-   put the stack_Name of someView into stackName
-   get the effective filename of stack stackName
-   if it is not empty then
-      lcw_Answer "Would you like to save this stack before closing?", someView
-      save stack stackName
-   end if
-   --
-   put "delete stack" && kwote (stackName) into pigoen
-   send pigoen to someView in 2 ticks
-end menu_Close
-
-on submenu_Dev
-   return "Dev | Menu"
-end submenu_Dev
-
-
---> Dev | Menu
--
-on menu_Clone someView
-   put the stack_Name of someView into stackName
-   stack_Clone stackName
-   put it into clonedStack
-end menu_Clone
-
-on _
-end _
-
-on menu_Resizable someView, someBoolean
-   put the stack_Name of someView into stackName
-   set the resizable of stack stackName to someBoolean
-end menu_Resizable
-
-on menu_Decorations someView, someDeco
+getprop checked_Resizable [mTarget]
+   put the stack_Name of mTarget into stackName
+   put the resizable of stack stackName into sBoolean
+   return sBoolean
+end checked_Resizable
+   
+getprop decorations_Params
    /*
    The decorations of a stack is one of the following:
    
@@ -132,6 +79,35 @@ on menu_Decorations someView, someDeco
    By default, the decorations property of newly created stacks is set to "default"  
    */
    
+   return "default,empty,-,title,minimize,maximize,close,menu,system,noShadow,metal"
+end decorations_Params
+
+
+--> Global | Frame | Menu
+-
+on menu_Clone cameraView
+   put the stack_Name of cameraView into stackNameToClone
+   stack_Clone stackNameToClone
+end menu_Clone
+
+private command _
+end _
+
+on menu_StackStyle cameraView, sStyle
+   -- set the stack_Frame of someView to frameStyle
+   set the stack_Style of cameraView to sStyle
+end menu_StackStyle
+
+-- on menu_Window someView, frameStyle
+   set the stack_Frame of someView to frameStyle
+end menu_Window
+
+-- on menu_SystemWindow someView
+   put the system_Window of someView into someBoolean
+   set the system_Window of someView to (not someBoolean)
+end menu_SystemWindow
+
+on menu_Decorations someView, someDeco
    put the stack_Name of someView into stackName
    --
    if someDeco is "empty" then
@@ -141,9 +117,31 @@ on menu_Decorations someView, someDeco
    end if
 end menu_Decorations
 
-on menu_Toplevel someView
+private command __
+end __
+
+on menu_EditLabel someView
+   put the stack_Label of someView into oldLabel
+   --
+   put lcw_Ask ("Edit the lable of this camera view...", oldLabel) into newLabel
+   --
+   set the stack_Label of someView to newLabel
+end menu_EditLabel
+
+on menu_Resizable mTarget
+   put the stack_Name of mTarget into stackName
+   put the resizable of stack stackName into sBoolean
+   set the resizable of stack stackName to (sBoolean is false)
+end menu_Resizable
+
+on menu_SaveAndClose someView
    put the stack_Name of someView into stackName
-   toplevel stack stackName
-end menu_Toplevel
-
-
+   get the effective filename of stack stackName
+   if it is not empty then
+      lcw_Answer "Would you like to save this stack before closing?", someView
+      save stack stackName
+   end if
+   --
+   put "delete stack" && kwote (stackName) into pigoen
+   send pigoen to someView in 2 ticks
+end menu_SaveAndClose

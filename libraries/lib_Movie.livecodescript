@@ -209,7 +209,7 @@ setprop movie_Size viewSize
             put 0 into someMargin
             set the card_Margin of cardObject to someMargin
          end if
-         put rect_SubtractMargin(someMargin, cardRect) into movieRect
+         put rect_Subtract(someMargin, cardRect) into movieRect
          
          set the view_Rect of movieView to movieRect
          break
@@ -257,14 +257,14 @@ setprop media_Rect [someDimension] someRect
          put item 1 of someDimension into xDimension
          put item 2 of someDimension into yDimension
          put rect_FitInside (xDimension, yDimension, someRect) into mediaRect
-         put rect_AddMargin (someMargin, mediaRect) into someRect
+         put rect_Add (someMargin, mediaRect) into someRect
          set the rect of targetObject to someRect
          break
       case someDimension is empty
          put the media_Width of targetObject into xDimension
          put the media_Height of targetObject into yDimension
          put rect_FitInside (xDimension, yDimension, someRect) into mediaRect
-         put rect_AddMargin (someMargin, mediaRect) into someRect
+         put rect_Add (someMargin, mediaRect) into someRect
          set the rect of targetObject to someRect
          break
       default
@@ -272,7 +272,7 @@ setprop media_Rect [someDimension] someRect
          set the rect of targetObject to someRect
          set the resize_Style of targetObject to someDimension
          put the result into mediaRect
-         put rect_AddMargin (someMargin, mediaRect) into someRect
+         put rect_Add (someMargin, mediaRect) into someRect
          set the rect of targetObject to someRect
    end switch
    -- rect_CreateMask someRect

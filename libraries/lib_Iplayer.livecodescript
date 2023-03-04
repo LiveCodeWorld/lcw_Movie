@@ -51,10 +51,14 @@ end mDoubleUp_iPlayer
 -
 function iplayer_ListHistory
    put shell ("get_iplayer --history '.*'") into shellResult
-   put lineoffset ("Matches:", shellResult) into lineNum
-   put line (lineNum + 1) to -2 of shellResult into hIndex
    return hIndex
 end iplayer_ListHistory
+
+command iplayer_CleanMatch shellResult
+   put lineoffset ("Matches:", shellResult) into lineNum
+   put line (lineNum + 1) to -2 of shellResult into hIndex
+   §
+end iplayer_CleanMatch
 
 function iplayer_Search sTerm
    put "get_iplayer" && kwote (sTerm) into someShell
