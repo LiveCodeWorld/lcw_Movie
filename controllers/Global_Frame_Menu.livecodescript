@@ -90,7 +90,7 @@ on menu_Clone cameraView
    stack_Clone stackNameToClone
 end menu_Clone
 
-private command _
+private on _
 end _
 
 on menu_StackStyle cameraView, sStyle
@@ -117,7 +117,7 @@ on menu_Decorations someView, someDeco
    end if
 end menu_Decorations
 
-private command __
+private on __
 end __
 
 on menu_EditLabel someView
