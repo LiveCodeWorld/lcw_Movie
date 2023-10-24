@@ -23,6 +23,16 @@ local LocalArray
 
 --> Working on
 -
+getprop displayed_Data
+   put the movie_File of me into mFile
+   return mFile
+end displayed_Data
+
+setprop displayed_Data mFile
+   set the movie_File of me to mFile
+   return the result
+end displayed_Data
+
 setprop youtube_ID videoID
    put youtube_HtmlEmbed (videoID) into iframeHTML
    put html_GetIframeSrc (iframeHTML) into videoURL
@@ -101,8 +111,8 @@ end dragEnter
 -
 command drop_Video
    put the keys of the dragData into dropKeys
-   put the dragData ["text"] into droppedURL
    --
+   put the dragData ["text"] into droppedURL
    put the dragData ["html"] into droppedHTML
    put "<p><a href='(.+\.html)'>.+</a></p>" into wikiHtmlURlReg
    replace "'" with quote in wikiHtmlURlReg
@@ -112,7 +122,8 @@ command drop_Video
          drop_Youtube droppedURL
          break
       case "Files" is among the lines of dropKeys
-         drop_File
+         put the dragData ["files"] into dFiles
+         drop_File dFiles
          break
       case "image" is among the lines of dropKeys
          put the dragData ["image"] into imageContents
@@ -195,20 +206,26 @@ end drop_WikiHtmlUrl
 
 command drop_BBC droppedURL
    -- Horizon_2020_-_Pluto_Back_From_the_Dead_m000kqm9_original.mp4
-   
+   set the cursor to watch
    iplayer_DownloadVideo droppedURL
-   put the result into infoArray
-   --
+   put the result into episodeTitle
+   
+   ## Now add it to player
+   put item -1 of episodeTitle into programID
+   put iplayer_GetInfo (programID) into infoArray
    display_Data infoArray
-   --
-   -- now add it to player
-   --
+   
    put iplayer_GetDownloadFolder() into iplayerFolder
    finder_Reveal iplayerFolder
 end drop_BBC
 
-command drop_File
-   put line 1 of dragData ["files"] into videoFile
+command drop_File dFiles
+   if dFiles is empty then
+      put line 1 of dragData ["files"] into videoFile
+   else
+      put line 1 of dFiles into videoFile
+   end if
+   --
    switch
       case file_IsVideo (videoFile)
          set the movie_File of me to videoFile

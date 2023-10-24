@@ -7,72 +7,13 @@ name: lib_Iplayer
 type: library
 version: 0.1
 
-/*Some help*/
-
-
---> Display
--
-command ask_DisplayIplayerSeries
-   put ask_Question ("Waht series would you like to display?", "p093wp6h", "Search iPlayer") into pID
-   display_IplayerSeries pID
-   return the result
-end ask_DisplayIplayerSeries
-
-command display_IplayerSeries sID
-   get iplayer_ListSeries (sID)
-   
-   set the itemdelimiter to " - "
-   put item 1 of line 1 of it into seriesName
-   repeat for each line sLine in it
-      set the itemdelimiter to comma
-      put item -1 of sLine into episodeID
-      --
-      get item 1 of sLine
-      set the itemdelimiter to " - "
-      put item 3 of it into eName
-      --
-      put episodeID into eArray [eName]["episodeID"]
-   end repeat
-   --
-   display_Data eArray, seriesName, "iPlayer"
-   put the result into displayView
-   set the tool_Menus of displayView to "iPlayer"
-   set the displayed_ProgramID of displayView to sID
-   return displayView
-end display_IplayerSeries
-
-on mDoubleUp_iPlayer displayView, someLine
-   breakpoint
-   put the title_Text of displayView into someTitle
-end mDoubleUp_iPlayer
+/*
+This library wraps teh get_iplayer commandline tool.
+*/
 
 
 --> Working on
 -
-function iplayer_ListHistory
-   put shell ("get_iplayer --history '.*'") into shellResult
-   return hIndex
-end iplayer_ListHistory
-
-command iplayer_CleanMatch shellResult
-   put lineoffset ("Matches:", shellResult) into lineNum
-   put line (lineNum + 1) to -2 of shellResult into hIndex
-   §
-end iplayer_CleanMatch
-
-function iplayer_Search sTerm
-   put "get_iplayer" && kwote (sTerm) into someShell
-   put shell (someShell) into shellResult
-   return shellResult
-end iplayer_Search
-
-command iplayer_DownloadSeries sID
-   put merge ("get_iplayer --pid=[[sID]] --pid-recursive") into someShell
-   put shell (someShell) into shellResult
-   -- 
-   put shellResult
-end iplayer_DownloadSeries
-
 function iplayer_ListSeries pID
    put merge ("get_iplayer --pid=[[pID]] --pid-recursive-list") into someShell
    put shell (someShell) into shellResult
@@ -87,6 +28,70 @@ function iplayer_ListSeries pID
    return word 1 to -1 of shellResult
 end iplayer_ListSeries
 
+function iplayer_EpisodesFromResult shellResult
+   /*
+   Episodes:
+   Universe: Series 1 - The Sun: God Star, BBC Two, p09ybpb8
+   INFO: 1 total programmes
+   */
+   
+   _TrimResult shellResult, "Episodes:"
+   return shellResult
+end iplayer_EpisodesFromResult
+
+private command _TrimSearchResult @searchResult
+   _TrimResult searchResult, "Matches:"
+   return the result
+end _TrimSearchResult
+
+private command _TrimResult @sResult, sectionTitle
+   put lineOffset (sectionTitle, sResult) into lineNum
+   if lineNum = 0 then
+      put sResult into oResult
+      put empty into sResult
+      return oResult
+   end if
+   --
+   delete line 1 to lineNum of sResult
+   --
+   repeat with lineNum = 1 to the number of lines of sResult
+      if line lineNum of sResult is empty then
+         put line 1 to (lineNum - 1) of sResult into sResult
+      end if
+   end repeat
+   
+   put line 1 to (lineNum + 1) of sResult into sResult
+   return it
+end _TrimResult
+
+
+--> iPlayer
+-
+function iplayer_ListHistory
+   put shell ("get_iplayer --history '.*'") into shellResult
+   return hIndex
+end iplayer_ListHistory
+
+command iplayer_CleanMatch shellResult
+   put lineoffset ("Matches:", shellResult) into lineNum
+   put line (lineNum + 1) to -2 of shellResult into hIndex
+   §
+end iplayer_CleanMatch
+
+function iplayer_Search sTerm
+   put "get_iplayer" && kwote (sTerm) into someShell
+   put shell (someShell) into searchResult
+   _TrimSearchResult searchResult
+   return searchResult
+end iplayer_Search
+
+command iplayer_DownloadSeries sID
+   put merge ("get_iplayer --pid=[[sID]] --pid-recursive") into someShell
+   put shell (someShell) into shellResult
+   -- 
+   put shellResult
+end iplayer_DownloadSeries
+
 command iplayer_DownloadVideo droppedURL
    /*
    get_iplayer --get "Top Gear" --type=tv --channel="BBC Two" --file-prefix="<nameshort><-senum><-episodeshort>" --output "/media/TV Shows 1/2 - TV Shows/Top Gear/Season 19"
@@ -94,21 +99,14 @@ command iplayer_DownloadVideo droppedURL
    "<name> - <episode> <pid> <version>"
    */
    
-   -- m000kqm9/horizon-2020-pluto-back-from-the-dead"
-   put item 6 of droppedURL into folderName
-   put item 7 of droppedURL into programBit
-   --
    set the cursor to watch
    put "get_iplayer --subtitles --force" && kwote (droppedURL) into someShell 
    put shell (someShell) into shellResult
    --
    put _ParseDownloadResult (shellResult) into resultArray
    put resultArray ["episodeTitle"] into episodeTitle
-   put item 2 of episodeTitle into programID
-   
-   put iplayer_GetInfo (programID) into infoArray
-   return infoArray
-end iplayer_DownloadVideo shellResult
+   return episodeTitle
+end iplayer_DownloadVideo
 
 command iplayer_DownloadSubtitles programID, pRaw
    if pRaw is true then
@@ -130,8 +128,7 @@ command iplayer_Download programID, pWithSub
    put space & "--pid=" & word 1 to -1 of programID after someShell 
    put shell (someShell) into shellResult
    --
-   put iplayer_GetInfo (programID) into infoArray
-   return infoArray
+   return shellResult
 end iplayer_Download
 
 function iplayer_GetInfo programID
@@ -142,6 +139,28 @@ function iplayer_GetInfo programID
    put _ParseInfoResult (shellResult) into infoArray
    return infoArray
 end iplayer_GetInfo
+
+function iplayer_GetDefaultOutupFolder
+   put iplayer_GetPrefsArray() into prefsArray
+   put prefsArray ["output"] into outupFolder
+   if outupFolder is empty then
+      return the defaultfolder
+   else
+      return outupFolder
+   end if
+end iplayer_GetDefaultOutupFolder
+
+function iplayer_GetPrefsArray
+   put shell ("get_iplayer --prefs-show") into prefsResult
+   delete line 1 of prefsResult
+   set the itemdelimiter to "="
+   repeat for each line sLine in prefsResult
+      put word 1 to -1 of item 1 of sLine into sKey
+      put word 1 to -1 of item 2 of sLine into sValue
+      put sValue into prefsArray [sKey]
+   end repeat
+   return prefsArray
+end iplayer_GetPrefsArray
 
 command iplayer_SetDefaultOutupFolder sFolder
    -- Change your default output directory:
@@ -280,7 +299,7 @@ private function _ParseInfoResult shellResult
    */
    -- put debug_GetCommentAbove() into shellResult
    
-   put _ParseShellResult(shellResult) into resultArray
+   put _ParseShellResult (shellResult) into resultArray
    --
    return resultArray
 end _ParseInfoResult
@@ -299,7 +318,11 @@ private function _ParseShellResult shellResult
    -- now let's turn into an array
    set the itemdelimiter to ":"
    repeat for each line someLine in shellResult
-      put word 1 to -1 of item 2 of someLine into resultArray [item 1 of someLine]
+      put item 1 of someLine into sKey
+      if sKey is empty then
+         next repeat
+      end if
+      put word 1 to -1 of item 2 of someLine into resultArray [sKey]
    end repeat
    return resultArray
 end _ParseShellResult
@@ -369,11 +392,3 @@ private command _StripShellTail @shellResult
    end repeat
    return false
 end _StripShellTail
-
-
---> Iplayer
--
-
-
---> Deps
--

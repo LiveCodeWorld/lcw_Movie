@@ -7,13 +7,6 @@ type: library
 version: 0.1
 
 
---> Display
--
-command display_Video mFile
-   mplayer_Play mFile
-end display_Video
-
-
 --> Working on
 -
 function time_SecondsToHMS someSeconds

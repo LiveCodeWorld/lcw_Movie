@@ -90,6 +90,18 @@ command movie_Play mPlayer
    start player id sID of stack stackName
 end movie_Play
 
+getprop disabled_YouTubeInfo dView
+   put display_FindCloned ("View|Browser", "Browser") into browserView
+   put the browser_URL of browserView into someURL
+   --
+   -- https://www.youtube.com/watch?v=AGNNBoCjIP8
+   if someURL begins with "https://www.youtube.com/watch?v=" then
+      return false
+   else
+      return true
+   end if
+end disabled_YouTubeInfo
+
 
 --> Global | Movie | Menu
 -
@@ -101,16 +113,34 @@ on submenu_Iplayer
    return "Global | iPlayer | Menu"
 end submenu_Iplayer
 
+private on _
+end _
+
 on menu_DownloadYoutube mPlayer
    put lcw_Ask ("Enter a Youtube url...", "https://www.youtube.com/watch?v=AGNNBoCjIP8") into youtubeUrl
-   youtube_DownloadVideo youtubeUrl
-   put the result into videoFile
    --
-   set the filename of mPlayer to videoFile
+   put fedwiki_LocalAssetsFolder() into assetFolder
+   set the defaultFolder to assetFolder
+   --
+   youtube_DownloadVideo youTubeUrl, true, "h264"
+   put the result into mFile
+   --
+   display_Video mFile
 end menu_DownloadYoutube
 
-on _
-end _
+on menu_YoutubeBrowser mPlayer
+   display_Browser "https://youtube.com"
+end menu_YoutubeBrowser
+
+on menu_ListDownloadFormats mPlayer
+   put lcw_Ask ("Enter a Youtube url...", "https://www.youtube.com/watch?v=AGNNBoCjIP8") into youtubeUrl
+   --
+   put youtube_FetchFormatArray (youtubeUrl) into FormatArray
+   display_Data FormatArray
+end menu_ListDownloadFormats
+
+private on __
+end __
 
 on menu_ExportSelectedClip mPlayer, cutFast
    put the clip_StartTime [s] of mPlayer into sSeconds
@@ -155,19 +185,27 @@ on menu_DisplayEditMarkers mPlayer
    set the line_Menu of indexView to "Global | EDL | Line | Menu"
 end menu_DisplayEditMarkers
 
-on _
-end _
+private on ___
+end ___
 
 on submenu_Vimeo
    return "Global | Vimeo | Menu"
 end submenu_Vimeo
 
-on _
-end _
+on menu_YouTubeInfo
+   -- https://www.youtube.com/watch?v=AGNNBoCjIP8
+   put display_FindCloned ("View|Browser", "Browser") into browserView
+   put the browser_URL of browserView into someURL
+   --
+   set the itemdelimiter to "="
+   put item -1 of someURL into videoID
+   --
+   display_YoutubeVideoData videoID
+end menu_YouTubeInfo
 
-on menu_MenuHelp
-   launch_MenuHelp
-end menu_MenuHelp
+on menu_DownloadDocs
+   launch_YoutubeDownloadDocumentation
+end menu_DownloadDocs
 
 on submenu_Dev
    return menu_Create ("Global | Movie | Dev | Menu")

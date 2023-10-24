@@ -1,7 +1,7 @@
 ﻿script "Global | iPlayer | Menu"
 --> MetaData
 -
-copyright: Anonymous
+copyright: David Bovill
 license: GPLv3
 name: Global | iPlayer | Menu
 type: controller
@@ -30,11 +30,7 @@ end disabled_Download
 --> Global | iPlayer | Menu
 -
 on menu_SearchIplayer
-   put ask_Question ("What would uyou like to search for?", "Prime Minister's Questions", "Search BBC  iPlayer") into sTerm
-   --
-   put iplayer_Search (sTerm) into foundIndex
-   --
-   display_Data foundIndex, sTerm, "iPLayer"
+   display_SearchIplayer
 end menu_SearchIplayer
 
 on menu_Download displayView
@@ -47,16 +43,5 @@ on _
 end _
 
 on submenu_Dev
-   return "Dev | Menu"
+   return menu_DevTitle("Global | iPlayer | Menu")
 end submenu_Dev
-
-
---> Dev | Menu
--
-on menu_Experiment displayView
-   put displayView
-end menu_Experiment
-
-
---> Deps
--

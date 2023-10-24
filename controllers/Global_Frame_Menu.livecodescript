@@ -134,6 +134,27 @@ on menu_Resizable mTarget
    set the resizable of stack stackName to (sBoolean is false)
 end menu_Resizable
 
+private on __
+end __
+
+on menu_CreateTransparentMask someView
+   breakpoint
+   put the card_Object of someView into cardObject
+   put the stack_Name of someView into stackName
+   put the id of img _mask into maskID
+   
+   put the rect of someView into viewRect
+   
+   set backPattern of cardObject to ""
+   --
+   export snapshot from rect viewRect of someViewn to imgObject as PNG
+   --
+   set backPattern of cardObject to maskID
+   set windowshape of stack stackName to maskID
+   
+   if "Mac" is in platform() then set shadow of stack stackName to false
+end menu_CreateTransparentMask
+
 on menu_SaveAndClose someView
    put the stack_Name of someView into stackName
    get the effective filename of stack stackName

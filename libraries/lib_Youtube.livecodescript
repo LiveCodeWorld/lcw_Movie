@@ -9,16 +9,172 @@ copyright: David Bovill
 deps: lib_Fedwiki
 
 /*
-A library for XML and XML related data structures.
+A library for the Youtube API.
 */
 
 --> Variables
 -
 constant YoutubeRestStem = "https://youtube.googleapis.com/youtube/v3/"
+local LocalArray
 
 
 --> Working on
 -
+function youtube_FetchUserChannelJson userName
+   -- GET https://www.googleapis.com/youtube/v3/channels?part=id&forUsername=WorldCryptoNetwork&key={YOUR_API_KEY}
+   put "channels?" into channelBit
+   put "part=id&forUsername=" & urlencode (userName) after channelBit
+   put _FetchYoutubeJSON (channelBit) into someJSON
+   return someJSON
+end youtube_FetchUserChannelJson
+
+private function _FetchYoutubeJSON apiBit, pAddApiKey
+   put _ConstructRestUrl(apiBit) into restUrl
+   if pAddApiKey is not false then
+      -- not sure this is ever needed?
+      put "&key=" & youTube_GetApiKey() after restUrl
+   end if
+   --
+   put youtube_GetAccessToken() into accessToken
+   --
+   put youtube_GetAccessToken() into accessToken
+   put jsonrpc_GET (restURL, accessToken) into someJSON
+   return someJSON
+end _FetchYoutubeJSON
+
+function youtube_FetchPlayListJson playlistID, pMaxResults, pNextPageToken
+   if pMaxResults is empty then put 50 into pMaxResults
+   
+   put "playlistItems?part=snippet&playlistId=" & playlistID into channelBit
+   if pNextPageToken is not empty then
+      put "&pageToken=" & pNextPageToken after channelBit
+   end if
+   put "&maxResults=" & pMaxResults after channelBit
+   put _FetchYoutubeJSON (apiBit) into someJSON
+   return someJSON
+end youtube_FetchPlayListJson
+
+function youtube_ListMyChannels
+   /*
+   GET /youtube/v3/channels?part=snippet&mine=true HTTP/1.1
+   Host: www.googleapis.com
+   Authorization: Bearer access_token
+   */
+   
+   put "channels?part=snippet&mine=true" into apiBit
+   put _FetchYoutubeData (apiBit, true) into ytData
+   return ytData
+end youtube_ListMyChannels
+
+function youtube_ListMyPlaylists
+   /* curl \
+   'https://youtube.googleapis.com/youtube/v3/playlists?part=snippet%2CcontentDetails&maxResults=25&mine=true&key=[YOUR_API_KEY]' \
+   --header 'Authorization: Bearer [YOUR_ACCESS_TOKEN]' \
+   --header 'Accept: application/json' \
+   --compressed
+   */
+   
+   put "playlists?part=snippet%2CcontentDetails&maxResults=25&mine=true" into apiBit
+   put _FetchYoutubeData (apiBit, true) into ytData
+   return ytData
+end youtube_ListMyPlaylists
+
+
+--> Youtube | REST
+-
+private function _FetchYoutubeData apiBit, pAddApiKey
+   put _ConstructRestUrl(apiBit) into restUrl
+   if pAddApiKey is not false then
+      -- not sure this is ever needed?
+      put "&key=" & youTube_GetApiKey() after restUrl
+   end if
+   --
+   put youtube_GetAccessToken() into accessToken
+   put jsonrpc_GetArray (restURL, accessToken) into ytData
+   return ytData
+end _FetchYoutubeData
+
+private function _ConstructRestUrl apiBit
+   put YoutubeRestStem & apiBit into restUrl
+   return restUrl
+end _ConstructRestUrl
+
+command youtube_Authenticate
+   /*
+   https://accounts.google.com/o/oauth2/v2/auth?
+   scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube.readonly&
+   response_type=code&
+   state=security_token%3D138r5719ru3e1%26url%3Dhttps%3A%2F%2Foauth2.example.com%2Ftoken&
+   redirect_uri=http%3A//127.0.0.1%3A9004&
+   client_id=client_id
+   */
+   
+   constant kAuthURL = "https://accounts.google.com/o/oauth2/v2/auth" -- "https://oauth2.googleapis.com"
+   constant kTokenURL = "https://oauth2.googleapis.com/token"
+   --
+   put "https://www.googleapis.com/auth/youtube.readonly" into kScopes
+   
+   put youtube_GetClientID() into clientID
+   put youtube_GetClientSecret() into clientSecret
+   --
+   OAuth2 kAuthURL, kTokenURL, clientID, clientSecret, kScopes, 54303
+   if the result is not empty then
+      return "Not authorized!"
+   else
+      put it into authArray
+      return authArray
+   end if
+end youtube_Authenticate
+
+function youtube_GetAccessToken
+   return LocalArray ["Youtube accessToken"]
+end youtube_GetAccessToken
+
+command youtube_SetAccessToken accessToken
+   put accessToken into LocalArray ["Youtube accessToken"]
+end youtube_SetAccessToken
+
+function youtube_GetApiKey
+   put secret_Get ("YoutubeApiKey", "youtube") into apiKey
+   return apiKey
+end youtube_GetApiKey
+
+command youtube_SetApiKey apiKey
+   secret_Set "YoutubeApiKey", apiKey, "youtube"
+   put the result into modelDataFile
+   return modelDataFile
+end youtube_SetApiKey
+
+function youtube_GetClientID
+   put secret_Get ("Youtube_ClientID", "youtube") into clientID
+   return clientID
+end youtube_GetClientID
+
+command youtube_SetClientID clientID
+   secret_Set "Youtube_ClientID", clientID, "youtube"
+   put the result into modelDataFile
+   return modelDataFile
+end youtube_SetClientID
+
+function youtube_GetClientSecret
+   put secret_Get ("Youtube_ClientSecret", "youtube") into clientSecret
+   return clientSecret
+end youtube_GetClientSecret
+
+command youtube_SetClientSecret clientSecret
+   secret_Set "Youtube_ClientSecret", clientSecret, "youtube"
+   put the result into modelDataFile
+   return modelDataFile
+end youtube_SetClientSecret
+
+
+--> Youtube
+-
+function youtube_ConstructWatchUrl videoID
+   put "https://www.youtube.com/watch?v=" & videoID into youtubeURL
+   return youtubeURL
+end youtube_ConstructWatchUrl
+
 function youtube_GetVideoID someURL
    set the itemdelimiter to "/"
    put item 3 of someURL into youtubeBit
@@ -45,12 +201,6 @@ function youtube_HtmlEmbed videoID, pNextPageToken
 end youtube_HtmlEmbed
 
 function youtube_FetchVideoArray videoID, pNextPageToken
-   put youtube_FetchVideoJson (videoID, pNextPageToken) into someJSON
-   put json_ToArray (someJSON) into videoArray
-   return videoArray
-end youtube_FetchVideoArray
-
-function youtube_FetchVideoJson videoID, pNextPageToken
    put "videos?" into channelBit
    put "part=snippet,player,contentDetails" & "&" after channelBit
    put "id=" & videoID & "&" after channelBit
@@ -59,192 +209,9 @@ function youtube_FetchVideoJson videoID, pNextPageToken
    end if
    delete char -1 of channelBit
    --
-   put _FetchYoutubeJSON (channelBit) into someJSON
-   return someJSON
-end youtube_FetchVideoJson
-
-private function _FetchYoutubeJSON apiBit
-   put YoutubeRestStem & apiBit into someUrl
-   put "&key=" & youTube_GetApiKey() after someUrl
-   --
-   rest_SetJsonHeaders
-   put url someUrl into someJSON
-   --
-   return someJSON
-end _FetchYoutubeJSON
-
-
---> Display
--
-command display_YoutubeVideoData videoID, pNextPageToken
-   if videoID is empty then put "Qav6joFjKw0" into videoID
-   
-   -- put youtube_FetchVideoSnippetArray (videoID, pNextPageToken) into snippetArray
-   put youtube_FetchVideoArray (videoID) into videoData
-   --
-   display_Data videoData, videoID, "Youtube"
-   put the result into displayView
-   --
-   return displayView
-end display_YoutubeVideoData
-
-command display_YoutubePageArray videoID, pNextPageToken
-   local pPageTitle, pDontLinkTitle, pSourceArray
-   if videoID is empty then put "Qav6joFjKw0" into videoID
-   
-   put youtube_FetchVideoSnippetArray (videoID, pNextPageToken) into snippetArray
-   put convert_SnippetToPageArray (snippetArray, videoID, pPageTitle, pDontLinkTitle, pSourceArray) into pageArray
-   --
-   display_Data videoData, videoID, "Youtube"
-   put the result into displayView
-   --
-   return displayView
-end display_YoutubePageArray
-
-function secret_Get secretName
-   -- for server use only
-   if the environment is not "server" then pass "secret_Get"
-   --
-   put rigFetchConfigItem (secretName) into someSecret
-   return someSecret
-end secret_Get
-
-
---> TED
--
-function ted_ConstructPageArray tedID
-   put "https://www.ted.com/talks/" & tedID into tedURL
-   --
-   put html_FetchTidy (tedURL) into someHTML
-   put scrape_HeaderSection (someHTML) into metaArray
-   fedwiki_ParseMetaArray metaArray, htmlTitle, pageDescription, imageURL, articleTitle
-   put the result into shortDescription
-   --
-   put articleTitle & "." && pageDescription into videoDescription
-   --
-   put pageArray_Construct (articleTitle, shortDescription) into fedwikiPageArray
-   pageArray_AddVideo fedwikiPageArray, tedID, "TED", videoDescription
-   --
-   pageArray_StripJournal fedwikiPageArray
-   return fedwikiPageArray
-end ted_ConstructPageArray
-
-
---> YouTube
--
-command youtube_LaunchApiDocumentation
-   launch url "https://developer.vimeo.com/api/guides/start"
-end youtube_LaunchApiDocumentation
-
-
---> YouTube | Download
--
-command youtube_DownloadVideo youTubeUrl, pFormat, pDownloadMetadata
-   set the cursor to watch
-   put youtube_ConstructDownloadShell (youTubeUrl, pFormat, pDownloadMetadata) into someShell
-   put shell (someShell) into shellResult
-   --
-   youtube_DownloadParseShellResult shellResult, downloadedFile
-   --
-   return downloadedFile
-end youtube_DownloadVideo
-
-function youtube_FetchFormatArray youTubeUrl
-   put "youtube-dl -F" into someShell
-   put space & youTubeUrl after someShell
-   --
-   put shell (someShell) into shellResult
-   put word - 1 of line 2 of shellResult into videoID
-   --
-   repeat with lineNum = 4 to the number of lines of shellResult
-      get line lineNum of shellResult
-      --
-      put word 1 of it into fCode
-      put word 2 of it into fWord
-      --
-      put word 3 to -1 of item 1 of it into fText
-      put item 2 of it into someFormat
-      put item 3 of it into fSize
-      --
-      put fText into fArray [fWord][fCode]["fText"]
-      put fSize into fArray [fWord][fCode]["size"]
-      put someFormat into fArray [fWord][fCode]["format"]
-   end repeat
-   return fArray
-end youtube_FetchFormatArray
-
-function youtube_ListFormats youTubeUrl
-   put youtube_FetchFormatArray (youTubeUrl) into fArray
-   put the keys of fArray into availableFormats
-   return availableFormats
-end youtube_ListFormats
-
-command youtube_DownloadParseShellResult shellResult, @shortDownloadedFile
-   /*
-   [youtube] ns-qtoxnAS8: Downloading webpage
-   [youtube] ns-qtoxnAS8: Downloading video info webpage
-   [youtube] ns-qtoxnAS8: Extracting video information
-   [youtube] ns-qtoxnAS8: Searching for annotations.
-   [youtube] ns-qtoxnAS8: Downloading MPD manifest
-   [info] Writing video description to: Paddy's Lamentation - Gangs of New York (6_12) Movie CLIP (2002) HD-ns-qtoxnAS8.description
-   [info] Writing video annotations to: Paddy's Lamentation - Gangs of New York (6_12) Movie CLIP (2002) HD-ns-qtoxnAS8.annotations.xml
-   [info] Writing video description metadata as JSON to: Paddy's Lamentation - Gangs of New York (6_12) Movie CLIP (2002) HD-ns-qtoxnAS8.info.json
-   [download] Destination: Paddy's Lamentation - Gangs of New York (6_12) Movie CLIP (2002) HD-ns-qtoxnAS8.mp4
-   [download]   0.0% of 33.43MiB at Unknown speed ETA Unknown ETA
-   [download]   0.0% of 33.43MiB at 138.07KiB/s ETA 04:08
-   [download]   0.0% of 33.43MiB at 316.21KiB/s ETA 
-   */
-   
-   -- [download] Destination: Paddy's Lamentation - Gangs of New York (6_12) Movie CLIP (2002) HD-ns-qtoxnAS8.mp4
-   set the wholematches to false
-   put lineoffset ("[download] Destination: ", shellResult) into lineNum
-   put line lineNum of shellResult into downloadLine
-   set the itemdelimiter to ":"
-   delete item 1 of downloadLine
-   put word 1 to -1 of downloadLine into shortDownloadedFile
-end youtube_DownloadParseShellResult
-
-function youtube_ConstructDownloadShell youtubeVideoURL, pFormat, pDownloadMetadata
-   put "youtube-dl" into someShell
-   if pFormat is not empty then
-      -- ie mp4,best,ogg
-      put space & "-f" && pFormat after someShell
-   end if
-   --
-   if pDownloadMetadata is true then
-      put space & "--write-description" after someShell
-      put space & "--write-info-json" after someShell
-      put space & "--write-annotations" after someShell
-      put space & "--write-sub" after someShell
-      put space & "--write-thumbnail" after someShell
-   end if
-   --
-   -- shell_BashParamEscape youtubeVideoURL
-   put space & youtubeVideoURL after someShell
-   return someShell
-end youtube_ConstructDownloadShell
-
-
---> Youtube | Authentication
--
-function youtube_GetApiKey
-   put secret_Get ("YoutubeApiKey", "youtube") into apiKey
-   return apiKey
-end youtube_GetApiKey
-
-command youtube_SetApiKey apiKey
-   secret_Set "YoutubeApiKey", apiKey, "youtube"
-   put the result into modelDataFile
-   return modelDataFile
-end youtube_SetApiKey
-
-
---> Youtube | REST
--
-function youtube_ConstructWatchUrl videoID
-   put "https://www.youtube.com/watch?v=" & videoID into youtubeURL
-   return youtubeURL
-end youtube_ConstructWatchUrl
+   put _FetchYoutubeData (channelBit) into videoArray
+   return videoArray
+end youtube_FetchVideoArray
 
 
 --> Youtube | Playlist | Index
@@ -458,12 +425,6 @@ function youtube_FetchPlayListPageArray playlistID, pPageTitle, pMaxResults, pDo
 end youtube_FetchPlayListPageArray
 
 function youtube_FetchPlayListArray playlistID, pMaxResults, pNextPageToken
-   put youtube_FetchPlayListJson (playlistID, pMaxResults, pNextPageToken) into someJSON
-   put json_ToArray (someJSON) into someArray
-   return someArray
-end youtube_FetchPlayListArray
-
-function youtube_FetchPlayListJson playlistID, pMaxResults, pNextPageToken
    if pMaxResults is empty then put 50 into pMaxResults
    
    put "playlistItems?part=snippet&playlistId=" & playlistID into channelBit
@@ -471,36 +432,24 @@ function youtube_FetchPlayListJson playlistID, pMaxResults, pNextPageToken
       put "&pageToken=" & pNextPageToken after channelBit
    end if
    put "&maxResults=" & pMaxResults after channelBit
-   put _FetchYoutubeJSON (channelBit) into someJSON
-   return someJSON
-end youtube_FetchPlayListJson
+   put _FetchYoutubeData (channelBit) into someArray
+   return someArray
+end youtube_FetchPlayListArray
 
 function youtube_FetchPlayListInfoArray playlistID
-   put youtube_FetchPlayListInfoJson (playlistID) into someJSON
-   put json_ToArray (someJSON) into someArray
-   return someArray
-end youtube_FetchPlayListInfoArray
-
-function youtube_FetchPlayListInfoJson playlistID
    -- GET https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=UUR9gdpWisRwnk_k23GsHfcA&key={YOUR_API_KEY}
    put "playlists?part=snippet&id=" & playlistID into channelBit
-   put _FetchYoutubeJSON (channelBit) into someJSON
-   return someJSON
-end youtube_FetchPlayListInfoJson
+   put _FetchYoutubeData (channelBit) into someArray
+   return someArray
+end youtube_FetchPlayListInfoArray
 
 
 --> Youtube | Channels | Search
 -
 function youtube_FetchSearchChannelArray channelID, pSearchQuery, pMaxResults, pNextPageToken
-   put youtube_FetchSearchChannelJson (channelID, pSearchQuery, pMaxResults, pNextPageToken) into someJSON
-   put json_ToArray (someJSON) into someArray
-   return someArray
-end youtube_FetchSearchChannelArray
-
-function youtube_FetchSearchChannelJson channelID, pSearchQuery, pMaxResults, pNextPageToken
    -- GET https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=UCR9gdpWisRwnk_k23GsHfcA&maxResults=50&key={YOUR_API_KEY}
    if pMaxResults is empty then put 50 into pMaxResults
-   
+   --
    put "search?part=snippet&channelId=" & channelID into channelBit
    put "&maxResults=" & pMaxResults after channelBit
    if pNextPageToken is not empty then
@@ -509,30 +458,29 @@ function youtube_FetchSearchChannelJson channelID, pSearchQuery, pMaxResults, pN
    if pSearchQuery is not empty then
       put "&q=" & urlencode (pSearchQuery) after channelBit
    end if
-   put _FetchYoutubeJSON (channelBit) into someJSON
-   return someJSON
+   put _FetchYoutubeData (channelBit) into someArray
+   return someArray
+end youtube_FetchSearchChannelArray
+
+function youtube_FetchSearchChannelJson channelID, pSearchQuery, pMaxResults, pNextPageToken
+     return someJSON
 end youtube_FetchSearchChannelJson
 
 
 --> Youtube | Channels
 -
 function youtube_FetchChannelArray channelID
-   put youtube_FetchChannelJson (channelID) into someJSON
-   put json_ToArray (someJSON) into someArray
-   return someArray
-end youtube_FetchChannelArray
-
-function youtube_FetchChannelJson channelID
    -- GET https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=UCR9gdpWisRwnk_k23GsHfcA&key={YOUR_API_KEY}
    put "contentDetails" into somePart
    put urlencode(comma) & "snippet" after somePart
-   
+   --
    put "channels?" into channelBit
    put "part=" & somePart after channelBit
    put "&id=" & channelID after channelBit
-   put _FetchYoutubeJSON (channelBit) into someJSON
-   return someJSON
-end youtube_FetchChannelJson
+   put _FetchYoutubeData (channelBit) into someArray
+   --
+   return someArray
+end youtube_FetchChannelArray
 
 function youtube_FetchChannelUploadsPlayListID channelID
    put youtube_FetchChannelArray (channelID) into channelArray   
@@ -541,19 +489,13 @@ function youtube_FetchChannelUploadsPlayListID channelID
 end youtube_FetchChannelUploadsPlayListID
 
 function youtube_FetchUserChannelID userName
-   put youtube_FetchUserChannelJson (userName) into someJSON
-   put json_ToArray (someJSON) into someArray
+   put "channels?" into channelBit
+   put "part=id&forUsername=" & urlencode (userName) after channelBit
+   put _FetchYoutubeData (channelBit) into someArray
+   --
    put someArray ["items"][1]["id"] into channelID
    return channelID
 end youtube_FetchUserChannelID
-
-function youtube_FetchUserChannelJson userName
-   -- GET https://www.googleapis.com/youtube/v3/channels?part=id&forUsername=WorldCryptoNetwork&key={YOUR_API_KEY}
-   put "channels?" into channelBit
-   put "part=id&forUsername=" & urlencode (userName) after channelBit
-   put _FetchYoutubeJSON (channelBit) into someJSON
-   return someJSON
-end youtube_FetchUserChannelJson
 
 
 --> Youtube | Search
@@ -583,18 +525,12 @@ function youtube_FindChannelArray searchChannelSlug
 end youtube_FindChannelArray
 
 function youtube_FetchSearchArray channelTitle
-   put youtube_FetchSearchJson (channelTitle) into someJSON
-   put json_ToArray (someJSON) into someArray
-   return someArray
-end youtube_FetchSearchArray
-
-function youtube_FetchSearchJson channelTitle
    -- https://www.googleapis.com/youtube/v3/search?part=snippet&q=WorldCryptoNetwork&type=channel&key={YOUR_API_KEY}
    put "search?part=snippet&q=" & urlencode (channelTitle) & "&type=channel" into channelBit
    put "&maxResults=50" after channelBit
-   put _FetchYoutubeJSON (channelBit) into someJSON
-   return someJSON
-end youtube_FetchSearchJson
+   put _FetchYoutubeData (channelBit) into someData
+   return someData
+end youtube_FetchSearchArray
 
 
 --> Private
@@ -908,6 +844,14 @@ end thumbnail_SetSmall
 
 --> Deps
 -
+function secret_Get secretName
+   -- for server use only
+   if the environment is not "server" then pass "secret_Get"
+   --
+   put rigFetchConfigItem (secretName) into someSecret
+   return someSecret
+end secret_Get
+
 command date_Convert8601 @revisionDate
    -- converts to "internet date"
    replace "T" with return in revisionDate

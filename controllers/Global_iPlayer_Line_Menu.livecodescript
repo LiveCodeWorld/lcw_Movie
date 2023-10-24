@@ -56,8 +56,9 @@ on menu_DownloadEpisode displayView
    put word 1 to -1 of it ["episodeID"] into episodeID
    --
    iplayer_Download episodeID
-   put the result into infoArray
+   put the result into shellResult
    --
+   put iplayer_GetInfo (episodeID) into infoArray
    display_Data infoArray, "infoArray"
 end menu_DownloadEpisode
 
