@@ -4,7 +4,8 @@
 license: GPLv3
 name: Global | Movie | Menu
 type: controller
-version: 0.3
+author: David Bovill
+version: 0.4
 
 
 --> Menu | Props
@@ -116,6 +117,17 @@ end submenu_Iplayer
 private on _
 end _
 
+on menu_YoutubeBrowser mPlayer
+   display_Browser "https://youtube.com"
+end menu_YoutubeBrowser
+
+on menu_ListDownloadFormats mPlayer
+   put lcw_Ask ("Enter a Youtube url...", "https://www.youtube.com/watch?v=AGNNBoCjIP8") into youtubeUrl
+   --
+   put youtube_FetchFormatArray (youtubeUrl) into FormatArray
+   display_Data FormatArray
+end menu_ListDownloadFormats
+
 on menu_DownloadYoutube mPlayer
    put lcw_Ask ("Enter a Youtube url...", "https://www.youtube.com/watch?v=AGNNBoCjIP8") into youtubeUrl
    --
@@ -127,17 +139,6 @@ on menu_DownloadYoutube mPlayer
    --
    display_Video mFile
 end menu_DownloadYoutube
-
-on menu_YoutubeBrowser mPlayer
-   display_Browser "https://youtube.com"
-end menu_YoutubeBrowser
-
-on menu_ListDownloadFormats mPlayer
-   put lcw_Ask ("Enter a Youtube url...", "https://www.youtube.com/watch?v=AGNNBoCjIP8") into youtubeUrl
-   --
-   put youtube_FetchFormatArray (youtubeUrl) into FormatArray
-   display_Data FormatArray
-end menu_ListDownloadFormats
 
 private on __
 end __
@@ -210,3 +211,4 @@ end menu_DownloadDocs
 on submenu_Dev
    return menu_Create ("Global | Movie | Dev | Menu")
 end submenu_Dev
+

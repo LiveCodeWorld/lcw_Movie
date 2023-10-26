@@ -5,7 +5,7 @@ copyright: David Bovill
 license: GPLv3
 name: lib_Iplayer
 type: library
-version: 0.1
+version: 0.2
 
 /*
 This library wraps teh get_iplayer commandline tool.

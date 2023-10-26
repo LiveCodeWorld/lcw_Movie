@@ -22,8 +22,8 @@ end display_Video
 
 --> Install | Youtube
 -
-command terminal_YoutubeDownload youTubeUrl, pFormat, pDownloadMetadata, pBestMP$ 
-   put youtube_ConstructDownloadShell (youTubeUrl, pFormat, pDownloadMetadata, pBestMP$ ) into someShell
+command terminal_YoutubeDownload youTubeUrl, pFormat, pDownloadMetadata, pBestMP4 
+   put youtube_ConstructDownloadShell (youTubeUrl, pFormat, pDownloadMetadata, pBestMP4) into someShell
    terminal_PasteScript someShell
 end terminal_YoutubeDownload
 

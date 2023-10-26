@@ -5,18 +5,15 @@ copyright: David Bovill
 license: GPLv3
 name: lib_YoutubeDownload
 type: library
-version: 0.1
+version: 0.2
 
 /*
-
 */
-
 
 --> Variables
 -
 constant YTdlCommand = "yt-dlp"
 -- constant YTdlCommand = "youtube-dl"
-
 
 --> Working on
 -

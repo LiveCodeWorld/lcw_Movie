@@ -3,10 +3,10 @@
 -
 name: lib_Youtube
 type: script library
-version: 0.6
 license: GPLv3
 copyright: David Bovill
 deps: lib_Fedwiki
+version: 0.6
 
 /*
 A library for the Youtube API.

@@ -1,18 +1,12 @@
 ﻿script "behavior_ViewMovie"
 --> MetaData
 -
-license: GPLv3
-name: behavior_ViewMovie
-type: behavior
-version: 0.1
-
-
---> MetaData
--
 author: David Bovill
 copyright: David Bovill
-name: View|Movie|Player
-type: view behavior
+name: behavior_ViewMovie
+license: GPLv3
+type: behavior
+version: 0.2
 
 /*
 This view displays a video.
