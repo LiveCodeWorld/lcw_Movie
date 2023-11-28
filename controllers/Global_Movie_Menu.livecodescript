@@ -93,8 +93,9 @@ end movie_Play
 
 getprop disabled_YouTubeInfo dView
    put display_FindCloned ("View|Browser", "Browser") into browserView
-   put the browser_URL of browserView into someURL
+   if exists (browserView) is false then return true
    --
+   put the browser_URL of browserView into someURL
    -- https://www.youtube.com/watch?v=AGNNBoCjIP8
    if someURL begins with "https://www.youtube.com/watch?v=" then
       return false
@@ -132,6 +133,9 @@ on menu_DownloadYoutube mPlayer
    put lcw_Ask ("Enter a Youtube url...", "https://www.youtube.com/watch?v=AGNNBoCjIP8") into youtubeUrl
    --
    put fedwiki_LocalAssetsFolder() into assetFolder
+   answer folder "Choose a dowload folder" with assetFolder as sheet
+   put it into assetFolder
+   if assetFolder is empty then exit to top
    set the defaultFolder to assetFolder
    --
    youtube_DownloadVideo youTubeUrl, true, "h264"
