@@ -7,17 +7,13 @@ name: lib_DisplayYoutube
 type: library
 version: 0.1
 
-/*Some help*/
+/*
+A library to display interactions with Youtube.
+*/
 
 
 --> Working on
 -
-command display_Video mFile, pStackName, pStackStyle, pStackRect
-   if pStackName is empty then put "Video" into pStackName
-   -- mplayer_Play mFile
-   display_View "View|Movie", mFile, pStackName, pStackRect, "movie_File", pStackStyle
-   return the result
-end display_Video
 
 
 --> Install | Youtube
@@ -45,6 +41,19 @@ command launch_YoutubeDownloadDocumentation
    launch url "https://github.com/yt-dlp/yt-dlp/wiki"
    launch url "https://github.com/ytdl-org/youtube-dl"
 end launch_YoutubeDownloadDocumentation
+
+
+--> Display | Video
+-
+command display_Video mFile, pDisplayView, pStackLabel, pStackStyle, pStackRect
+   -- mplayer_Play mFile
+   -- display_View "View|Movie", mFile, pStackLabel, pStackRect, "movie_File", pStackStyle
+   if pStackLabel is empty then put "Video" into pStackLabel
+   
+   display_ModuleInstance "View|Movie", mFile, pStackLabel, pDisplayView, "movie_File", pStackStyle
+   put the result into dView  
+   return dView
+end display_Video
 
 
 --> Display | Youtube

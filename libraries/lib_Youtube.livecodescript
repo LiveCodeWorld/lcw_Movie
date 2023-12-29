@@ -18,6 +18,14 @@ constant YoutubeRestStem = "https://youtube.googleapis.com/youtube/v3/"
 local LocalArray
 
 
+--> Move
+-
+function vimeo_ConstructWatchUrl videoID
+   put "https://vimeo.com/" & videoID into vimeoURL
+   return vimeoURL
+end vimeo_ConstructWatchUrl
+
+
 --> Working on
 -
 function youtube_FetchUserChannelJson userName
@@ -27,20 +35,6 @@ function youtube_FetchUserChannelJson userName
    put _FetchYoutubeJSON (channelBit) into someJSON
    return someJSON
 end youtube_FetchUserChannelJson
-
-private function _FetchYoutubeJSON apiBit, pAddApiKey
-   put _ConstructRestUrl(apiBit) into restUrl
-   if pAddApiKey is not false then
-      -- not sure this is ever needed?
-      put "&key=" & youTube_GetApiKey() after restUrl
-   end if
-   --
-   put youtube_GetAccessToken() into accessToken
-   --
-   put youtube_GetAccessToken() into accessToken
-   put jsonrpc_GET (restURL, accessToken) into someJSON
-   return someJSON
-end _FetchYoutubeJSON
 
 function youtube_FetchPlayListJson playlistID, pMaxResults, pNextPageToken
    if pMaxResults is empty then put 50 into pMaxResults
@@ -82,23 +76,6 @@ end youtube_ListMyPlaylists
 
 --> Youtube | REST
 -
-private function _FetchYoutubeData apiBit, pAddApiKey
-   put _ConstructRestUrl(apiBit) into restUrl
-   if pAddApiKey is not false then
-      -- not sure this is ever needed?
-      put "&key=" & youTube_GetApiKey() after restUrl
-   end if
-   --
-   put youtube_GetAccessToken() into accessToken
-   put jsonrpc_GetArray (restURL, accessToken) into ytData
-   return ytData
-end _FetchYoutubeData
-
-private function _ConstructRestUrl apiBit
-   put YoutubeRestStem & apiBit into restUrl
-   return restUrl
-end _ConstructRestUrl
-
 command youtube_Authenticate
    /*
    https://accounts.google.com/o/oauth2/v2/auth?
@@ -535,6 +512,37 @@ end youtube_FetchSearchArray
 
 --> Private
 -
+private function _FetchYoutubeJSON apiBit, pAddApiKey
+   put _ConstructRestUrl(apiBit) into restUrl
+   if pAddApiKey is not false then
+      -- not sure this is ever needed?
+      put "&key=" & youTube_GetApiKey() after restUrl
+   end if
+   --
+   put youtube_GetAccessToken() into accessToken
+   --
+   put youtube_GetAccessToken() into accessToken
+   put jsonrpc_GET (restURL, accessToken) into someJSON
+   return someJSON
+end _FetchYoutubeJSON
+
+private function _FetchYoutubeData apiBit, pAddApiKey
+   put _ConstructRestUrl(apiBit) into restUrl
+   if pAddApiKey is not false then
+      -- not sure this is ever needed?
+      put "&key=" & youTube_GetApiKey() after restUrl
+   end if
+   --
+   put youtube_GetAccessToken() into accessToken
+   put jsonrpc_GetArray (restURL, accessToken) into ytData
+   return ytData
+end _FetchYoutubeData
+
+private function _ConstructRestUrl apiBit
+   put YoutubeRestStem & apiBit into restUrl
+   return restUrl
+end _ConstructRestUrl
+
 private command set_PlayListPageTitle @pageTitle, playlistID
    if pageTitle is empty then
       put youtube_FetchPlayListInfoArray (playlistID) into infoArray
