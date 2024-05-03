@@ -83,7 +83,7 @@ function vimeo_ConstructPageArray vimeoID, pThumbQuality
    if thumbNailUrls is not empty then
       pageArray_AddMarkDown pageArray, "# Thumbnails"
       repeat for each line thumbNailUrl in thumbNailUrls
-         pageArray_AddImage pageArray, thumbNailUrl
+         pageArray_AddHtmlImage pageArray, thumbNailUrl
       end repeat
    end if
    --

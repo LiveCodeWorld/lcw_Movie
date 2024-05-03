@@ -558,7 +558,7 @@ private function convert_SnippetToThumbPageArray snippetArray, pVideoID, pPageTi
    
    if pPageTitle is empty then put videoTitle into pPageTitle
    put pPageTitle into pageArray ["title"]
-   put pageArray_ConstructJournal (pageTitle, pSourceArray) into pageArray ["journal"]  -- strip journal to minimum
+   put journalArray_Construct (pageTitle, pSourceArray) into pageArray ["journal"]  -- strip journal to minimum
    return pageArray
 end convert_SnippetToThumbPageArray
 
@@ -569,7 +569,7 @@ private function convert_SnippetToPageArray snippetArray, pVideoID, pPageTitle, 
    
    if pPageTitle is empty then put videoTitle into pPageTitle
    put pPageTitle into pageArray ["title"]
-   put pageArray_ConstructJournal (pageTitle, pSourceArray) into pageArray ["journal"]  -- strip journal to minimum
+   put journalArray_Construct (pageTitle, pSourceArray) into pageArray ["journal"]  -- strip journal to minimum
    return pageArray
 end convert_SnippetToPageArray
 
@@ -612,7 +612,7 @@ private function construct_VideoIndexPageArray orderedSnippetArray, pageTitle, p
    put fedwiki_ConstructCreateSourceArray (transportURL, pDroppedURL, dateTransported, repoURL) into sourceArray
    put lookUpArray into sourceArray ["link_dictionary"]
    
-   put pageArray_ConstructJournal (pageTitle, sourceArray) into pageArray ["journal"]  -- strip journal to minimum
+   put journalArray_Construct (pageTitle, sourceArray) into pageArray ["journal"]  -- strip journal to minimum
    return pageArray
 end construct_VideoIndexPageArray
 
@@ -705,7 +705,7 @@ private function construct_AllVideoPageArray orderedSnippetArray, pageTitle, pNe
       end if
       put the result into videoTitle
    end repeat
-   put pageArray_ConstructJournal (pageTitle, pSourceArray) into pageArray ["journal"]  -- strip journal to minimum
+   put journalArray_Construct (pageTitle, pSourceArray) into pageArray ["journal"]  -- strip journal to minimum
    return pageArray
 end construct_AllVideoPageArray
 
