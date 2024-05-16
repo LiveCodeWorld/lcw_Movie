@@ -26,7 +26,7 @@ command display_VlcMarks mStackName
    put vlc_GetModel (mStackName) into mData
    display_Data mData, mStackName, "VLC"
    put the result into dView
-   set the data_MenuBit of dView to "VLC | Marks"
+   set the tool_MenuBit of dView to "VLC | Marks"
 end display_VlcMarks
 
 command display_VlcStatus mStackName

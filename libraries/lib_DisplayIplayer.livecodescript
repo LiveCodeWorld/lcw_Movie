@@ -107,7 +107,7 @@ command display_IplayerSeries sID
    --
    display_Data eArray, seriesName, "iPlayer"
    put the result into displayView
-   set the data_MenuBit of displayView to "iPlayer"
+   set the tool_MenuBit of displayView to "iPlayer"
    set the displayed_ProgramID of displayView to sID
    return displayView
 end display_IplayerSeries
