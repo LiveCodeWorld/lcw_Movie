@@ -9,6 +9,16 @@ version: 0.2
 
 --> Working on
 -
+command ffmpeg_AddMetadata
+   -- put "$(cat test.wasm.base64)" into base64WasmData
+   -- put "Hello world" into base64WasmData
+   put "AGFzbQEAAAABCgJgAn9/AX8DAgEABwcBA2FkZAAACgkBBwAgACABags=" into base64WasmData
+   put merge ("ffmpeg -i test.mp4 -metadata WASM='[[base64WasmData]]' -c copy meta.mp4") into sShell
+   --
+   set the defaultFolder to "/Users/david/Downloads/"
+   put shell (sShell)
+end ffmpeg_AddMetadata
+
 command ffmpeg_ExportAudioAsWav audioFile, pWavFile
    if pWavFile is empty then
       put audioFile into pWavFile
@@ -280,5 +290,3 @@ private function _ShellResult someShell, whisperFolder
    set the defaultfolder to oFolder
    return shellResult
 end _ShellResult
-
-
