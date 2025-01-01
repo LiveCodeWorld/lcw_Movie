@@ -606,7 +606,7 @@ private function construct_VideoIndexPageArray orderedSnippetArray, pageTitle, p
    -- pageArray_AddMarkdown pageArray, markdownLinkIndex
    
    -- construct sourceArray
-   put "https://livecode.world/youtube/transportAgain" into transportURL
+   put "https://livecode.wiki/youtube/transportAgain" into transportURL
    put the milliseconds into dateTransported
    put "https://github.com/LiveCodeWorld/youtube.lc" into repoURL
    put fedwiki_ConstructCreateSourceArray (transportURL, pDroppedURL, dateTransported, repoURL) into sourceArray
