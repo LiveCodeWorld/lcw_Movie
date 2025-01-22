@@ -216,6 +216,10 @@ on menu_DownloadDocs
    launch_YoutubeDownloadDocumentation
 end menu_DownloadDocs
 
+on menu_LayoutControl dView
+   dispatch "LayoutControl" to dView
+end menu_LayoutControl
+
 on submenu_Dev
    return menu_Create ("Global | Movie | Dev | Menu")
 end submenu_Dev

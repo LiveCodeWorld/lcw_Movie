@@ -86,6 +86,100 @@ setProp dvHilite [pHiliteColor] pBoolean
    end if
 end dvHilite
 
+private command _TogglePlay
+   put the movie_Paused of me is false into sBoolean
+   
+   put the movie_Player of the target into moviePlayer
+   -- set the paused of moviePlayer to sBoolean
+   -- set the movie_Paused of me to isPaused
+   
+   put the short id of moviePlayer into playerID
+   if sBoolean is true then
+      stop player id playerID
+   else
+      start player id playerID
+   end if
+end _TogglePlay
+
+
+--> Events
+-
+on mouseDoubleUp
+   _TogglePlay
+end mouseDoubleUp
+
+on keyDown kName
+   switch kName
+      case "i"
+         put the movie_Seconds of me into mSeconds
+         set the clip_StartTime of me to mSeconds
+         break
+      case "o"
+         put the movie_Seconds of me into mSeconds
+         set the clip_EndTime of me to mSeconds
+         break
+      default
+         pass keyDown
+   end switch
+end keyDown
+
+on arrowkey pKey
+   put the long id of me into pObject
+   put the currenttime of pObject into sTime
+   put the timescale of pObject into oneSecond
+   --
+   switch
+      case the optionkey is "down"
+         put 2*oneSecond into oneSecond
+         break
+      case the commandkey is "down"
+         put 5*oneSecond into oneSecond
+         break
+   end switch
+   --
+   switch pKey
+      case "up"
+         put the clip_StartTime ["raw"] of me into sTime
+         if sTime > 0 then
+            set the currenttime of pObject to sTime
+         end if
+         break
+      case "down"
+         put the clip_EndTime ["raw"] of me into eTime
+         if eTime > 0 then
+            set the currenttime of pObject to eTime
+         end if
+         break
+      case "left"
+         if the optionKey is "down" then
+            put (sTime - oneSecond) into newTime
+         else
+            put (sTime - 1) into newTime
+         end if
+         set the currenttime of pObject to newTime
+         break
+      case "right"
+         if the optionKey is "down" then
+            put (sTime + oneSecond) into newTime
+         else
+            put (sTime + 1) into newTime
+         end if
+         set the currenttime of pObject to newTime
+         break
+      default
+         pass arrowkey
+   end switch
+end arrowkey
+
+on currentTimeChanged newTime
+   put the event_Message [newTime]  of me into messageName
+   if messageName is empty then pass currentTimeChanged
+   
+   set the movie_Paused of me to true
+   put messageName
+   do messageName
+end currentTimeChanged
+
 
 --> Events | Drag
 -
@@ -323,81 +417,6 @@ setprop show_Browser isShowing
    set the visible of _PlayerObject() to (isShowing is false)
    unlock screen
 end show_Browser
-
-
---> Events
--
-on keyDown kName
-   switch kName
-      case "i"
-         put the movie_Seconds of me into mSeconds
-         set the clip_StartTime of me to mSeconds
-         break
-      case "o"
-         put the movie_Seconds of me into mSeconds
-         set the clip_EndTime of me to mSeconds
-         break
-      default
-         pass keyDown
-   end switch
-end keyDown
-
-on arrowkey pKey
-   put the long id of me into pObject
-   put the currenttime of pObject into sTime
-   put the timescale of pObject into oneSecond
-   --
-   switch
-      case the optionkey is "down"
-         put 2*oneSecond into oneSecond
-         break
-      case the commandkey is "down"
-         put 5*oneSecond into oneSecond
-         break
-   end switch
-   --
-   switch pKey
-      case "up"
-         put the clip_StartTime ["raw"] of me into sTime
-         if sTime > 0 then
-            set the currenttime of pObject to sTime
-         end if
-         break
-      case "down"
-         put the clip_EndTime ["raw"] of me into eTime
-         if eTime > 0 then
-            set the currenttime of pObject to eTime
-         end if
-         break
-      case "left"
-         if the optionKey is "down" then
-            put (sTime - oneSecond) into newTime
-         else
-            put (sTime - 1) into newTime
-         end if
-         set the currenttime of pObject to newTime
-         break
-      case "right"
-         if the optionKey is "down" then
-            put (sTime + oneSecond) into newTime
-         else
-            put (sTime + 1) into newTime
-         end if
-         set the currenttime of pObject to newTime
-         break
-      default
-         pass arrowkey
-   end switch
-end arrowkey
-
-on currentTimeChanged newTime
-   put the event_Message [newTime]  of me into messageName
-   if messageName is empty then pass currentTimeChanged
-   
-   set the movie_Paused of me to true
-   put messageName
-   do messageName
-end currentTimeChanged
 
 
 --> m3u

@@ -21,6 +21,18 @@ on iPlayer_Drop displayView, dData
    answer sResult as sheet
 end iPlayer_Drop
 
+command display_IplayerInfo idOrUrl
+   put iplayer_GetInfo (idOrUrl) into iPlayerInfoData
+   put iPlayerInfoData ["episodeTitle"] into infoTitle
+   if episodeTitle is empty then
+      breakpoint
+      put iPlayerInfoData ["title"] into infoTitle
+   end if
+   --
+   display_Tool iPlayerInfoData, infoTitle, "iPlayer Info", "lcw_Movie"
+   return the result
+end display_IplayerInfo
+
 
 --> TED
 -

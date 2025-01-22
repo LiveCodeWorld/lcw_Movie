@@ -14,6 +14,61 @@ This library wraps teh get_iplayer commandline tool.
 
 --> Working on
 -
+function iplayer_DownloadedFile shortFile
+   put iplayer_ConstructDownloadedFile (shortFile) into dFile
+   if there is a file dFile then
+      return dFile
+   else
+      return empty
+   end if
+end iplayer_DownloadedFile
+
+function iplayer_ConstructDownloadedFile shortFile
+   put iplayer_GetDefaultOutupFolder() into oFolder
+   put oFolder & shortFile into dFile
+   return dFile
+end iplayer_ConstructDownloadedFile
+
+function iPlayer_ListDownloaded
+   -- could use history
+   put iplayer_GetDefaultOutupFolder() into oFolder
+   put folder_ListShort (oFolder, "*.mp4") into downloadedVideos
+   return downloadedVideos
+end iPlayer_ListDownloaded
+
+command iplayer_DownloadVideo idOrUrl
+   /*
+   get_iplayer --get "Top Gear" --type=tv --channel="BBC Two" --file-prefix="<nameshort><-senum><-episodeshort>" --output "/media/TV Shows 1/2 - TV Shows/Top Gear/Season 19"
+   Storyville_-_01._United_Skates_m000kxl0_original.mp4
+   "<name> - <episode> <pid> <version>"
+   */
+   
+   set the cursor to watch
+   if idOrUrl begins with "http" then
+      put "get_iplayer --subtitles --force" && idOrUrl into someShell 
+   else -- pid = m000kxl0
+      put "get_iplayer --subtitles --force --pid=" & idOrUrl into someShell 
+   end if
+   --
+   put shell (someShell) into shellResult
+   --
+   put _ParseDownloadResult (shellResult) into resultArray
+   put resultArray ["episodeTitle"] into episodeTitle
+   return episodeTitle
+end iplayer_DownloadVideo
+
+function iplayer_GetInfo idOrUrl
+   if idOrUrl begins with "http" then
+      put "get_iplayer --info" && idOrUrl into someShell
+   else -- pid = m000kxl0
+      put "get_iplayer --info --pid=" & idOrUrl into someShell
+   end if
+   --
+   put shell (someShell) into shellResult
+   put _ParseInfoResult (shellResult) into infoArray
+   return infoArray
+end iplayer_GetInfo
+
 function iplayer_ListSeries pID
    put merge ("get_iplayer --pid=[[pID]] --pid-recursive-list") into someShell
    put shell (someShell) into shellResult
@@ -92,22 +147,6 @@ command iplayer_DownloadSeries sID
    put shellResult
 end iplayer_DownloadSeries
 
-command iplayer_DownloadVideo droppedURL
-   /*
-   get_iplayer --get "Top Gear" --type=tv --channel="BBC Two" --file-prefix="<nameshort><-senum><-episodeshort>" --output "/media/TV Shows 1/2 - TV Shows/Top Gear/Season 19"
-   Storyville_-_01._United_Skates_m000kxl0_original.mp4
-   "<name> - <episode> <pid> <version>"
-   */
-   
-   set the cursor to watch
-   put "get_iplayer --subtitles --force" && kwote (droppedURL) into someShell 
-   put shell (someShell) into shellResult
-   --
-   put _ParseDownloadResult (shellResult) into resultArray
-   put resultArray ["episodeTitle"] into episodeTitle
-   return episodeTitle
-end iplayer_DownloadVideo
-
 command iplayer_DownloadSubtitles programID, pRaw
    if pRaw is true then
       put "get_iplayer --subtitles-only --subsraw --overwrite" into someShell
@@ -131,21 +170,13 @@ command iplayer_Download programID, pWithSub
    return shellResult
 end iplayer_Download
 
-function iplayer_GetInfo programID
-   -- m000kxl0
-   put "get_iplayer --info --pid=" & programID into someShell
-   put shell (someShell) into shellResult
-   --
-   put _ParseInfoResult (shellResult) into infoArray
-   return infoArray
-end iplayer_GetInfo
-
 function iplayer_GetDefaultOutupFolder
    put iplayer_GetPrefsArray() into prefsArray
    put prefsArray ["output"] into outupFolder
    if outupFolder is empty then
       return the defaultfolder
    else
+      text_AddTrailing outupFolder, slash
       return outupFolder
    end if
 end iplayer_GetDefaultOutupFolder
@@ -166,6 +197,8 @@ command iplayer_SetDefaultOutupFolder sFolder
    -- Change your default output directory:
    
    -- "/home/user/get_iplayer"
+   text_AddTrailing sFolder, slash
+   --
    put "get_iplayer --prefs-add --output=" & kwote (sFolder) into someShell
    put shell (someShell) into shellResult
    return shellResult

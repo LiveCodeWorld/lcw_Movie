@@ -45,12 +45,17 @@ end launch_YoutubeDownloadDocumentation
 
 --> Display | Video
 -
-command display_Video mFile, pDisplayView, pStackLabel, pStackStyle, pStackRect
+command display_Video mFile, pStackLabel, pDisplayView, pStackStyle, pStackRect
    -- mplayer_Play mFile
    -- display_View "View|Movie", mFile, pStackLabel, pStackRect, "movie_File", pStackStyle
    if pStackLabel is empty then put "Video" into pStackLabel
-   
-   display_ModuleInstance "View|Movie", mFile, pStackLabel, pDisplayView, "movie_File", pStackStyle
+   put "View|Movie" into mName
+   --
+   if mFile is empty or the shiftKey is "Down" then
+      display_Module mName, true, true
+   else
+      display_ModuleInstance mName, mFile, pStackLabel, pDisplayView, "movie_File", pStackStyle
+   end if
    put the result into dView  
    return dView
 end display_Video
