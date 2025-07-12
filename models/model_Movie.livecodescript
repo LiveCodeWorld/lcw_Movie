@@ -520,7 +520,7 @@ on movie_SetBookMarkData bookmarkTag, bookMarkTitle, movieFile, bookmarkValue
     put revXMLCreateTree(movieXml, false, true, false) into treeID
     
     put revXMLMatchingNode(treeID, "movie", "bookMark", "name", bookMarkTitle, 1) into foundNode
-    xml_TreeAddChild bookmarkTag, foundNode, bookmarkValue, treeID
+    xmlTree_AddChild bookmarkTag, foundNode, bookmarkValue, treeID
      
     put revXMLText(treeID) into movieXml
     revXMLDeleteTree treeID
@@ -579,9 +579,9 @@ on movie_SaveBookMarkData movieFile, bookMarkTitle, inPoint, outPoint, notes
             -- not found
             movie_TreeAddBookMark treeID, bookMarkTitle, inPoint, outPoint, notes
         else
-            xml_TreeAddChild "inPoint", foundNode, inPoint, treeID
-            xml_TreeAddChild "outPoint", foundNode, outPoint, treeID
-            xml_TreeAddChild "comment", foundNode, notes, treeID
+            xmlTree_AddChild "inPoint", foundNode, inPoint, treeID
+            xmlTree_AddChild "outPoint", foundNode, outPoint, treeID
+            xmlTree_AddChild "comment", foundNode, notes, treeID
         end if
         put revXMLText(treeID) into movieXml
         movie_SetMovieXml movieFile, movieXml
@@ -820,7 +820,7 @@ on movie_TreeSetTitle someTitle, treeID
     put revXMLRootNode(treeID) into rootNode
     put rootNode & "/title" into someNode
     --  revPutIntoXMLNode treeID, someNode, someTitle
-    xml_TreeAddNode someNode, someTitle, treeID
+    xmlTree_AddNode someNode, someTitle, treeID
     return the result
 end movie_TreeSetTitle
 
