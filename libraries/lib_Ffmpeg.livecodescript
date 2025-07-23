@@ -281,6 +281,7 @@ command file_Deconstruct someFile, @someRoot, @shortName, @fileExtension
    set the itemdelimiter to originalDelim
 end file_Deconstruct
 
+
 --> Private
 -
 private function _ShellResult someShell, whisperFolder
